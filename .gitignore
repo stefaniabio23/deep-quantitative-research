@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Research outputs (don't commit data or results)
+**/data/*.csv
+**/data/*.json
+**/data/*.parquet
+**/analysis/*.yaml
+**/synthesis/
+**/skeptic_review.yaml
+**/report.md
+**/report_metadata.yaml
+**/generate_report.py
+
+# Secrets
+.env
+*.env
+fred_api_key.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+*.log

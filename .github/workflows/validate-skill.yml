@@ -1,0 +1,94 @@
+name: Validate Skill
+
+on:
+  push:
+    paths:
+      - 'skills/**'
+      - 'agents/**'
+      - 'shared/**'
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'agents/**'
+      - 'shared/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate SKILL.md frontmatter
+        run: python .github/scripts/validate_skill.py
+
+      - name: Check agent files exist
+        run: |
+          required_agents=(
+            "question-sharpener"
+            "research-architect"
+            "data-scout"
+            "data-quality"
+            "statistical-analyst"
+            "timeseries-analyst"
+            "backtest-engine"
+            "causal-inference"
+            "interpret-agent"
+            "confidence-scorer"
+            "skeptic-agent"
+            "report-compiler"
+          )
+          for agent in "${required_agents[@]}"; do
+            if [ ! -f "agents/${agent}.md" ]; then
+              echo "MISSING: agents/${agent}.md"
+              exit 1
+            fi
+            echo "OK: agents/${agent}.md"
+          done
+
+      - name: Check shared protocols exist
+        run: |
+          required=(
+            "shared/statistical-standards.md"
+            "shared/data-quality-protocol.md"
+            "shared/interpretation-rubric.md"
+            "shared/output-style-guide.md"
+            "shared/handoff-schemas.md"
+          )
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
+
+      - name: Check scripts exist
+        run: |
+          required=(
+            "scripts/fetch_data.py"
+            "scripts/statistical_analysis.py"
+            "scripts/timeseries.py"
+            "scripts/backtest.py"
+            "scripts/data_quality.py"
+          )
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
+
+      - name: Python syntax check
+        run: |
+          for script in scripts/*.py; do
+            python -m py_compile "$script" && echo "OK: $script" || exit 1
+          done
