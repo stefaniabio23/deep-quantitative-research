@@ -4,7 +4,7 @@
 
 **Phase:** 3 — Analysis  
 **Input:** Validated signals + price data from data package  
-**Output:** `analysis/backtest.yaml` (Schema 3 in `shared/handoff-schemas.md`)
+**Output:** `analysis/backtest.yaml` (Schema 5 in `shared/handoff-schemas.md`)
 
 ---
 

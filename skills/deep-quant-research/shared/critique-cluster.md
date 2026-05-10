@@ -37,6 +37,18 @@ Questions to answer:
 - Is the model specification justified, or were alternative specifications tried and discarded?
 - Does the effect size meet domain-appropriate thresholds, or is it statistically significant but practically negligible?
 
+**Finance examples:**
+> "The analysis uses Pearson correlation on monthly equity returns. Returns are fat-tailed and heteroskedastic — Spearman rank correlation is more appropriate and should be reported alongside."
+
+> "12 factor combinations were tested; 2 pass at p < 0.05. Without Bonferroni correction, the expected number of false discoveries at this rate is ~0.6 — the findings may be noise."
+
+> "The regression uses levels of both variables without checking stationarity. If either series is I(1), the regression is spurious. ADF tests required."
+
+**Biotech examples:**
+> "The meta-analysis pools hazard ratios from trials with different patient populations, endpoints, and comparators. The I² statistic is not reported. Heterogeneity may make the pooled estimate uninterpretable."
+
+> "Phase 2 sample sizes average n=47 in this dataset. The analysis estimates 5 parameters per trial. With this ratio, estimates are unstable — confidence intervals will be wide and the pattern may not replicate."
+
 ```yaml
 methods_critique:
   challenges:
@@ -64,6 +76,16 @@ Questions to answer:
 - How old is the most recent data? Is this a current or historical snapshot?
 - For biotech: does publication bias affect the literature search?
 
+**Finance examples:**
+> "The backtest uses current S&P 500 constituents as the universe, applied historically. This induces severe survivorship bias — roughly 50% of 2004 constituents are not in the current index. The strategy is picking stocks we know survived, which is information unavailable at the time."
+
+> "Compustat data is used with period-end fiscal dates. Earnings are typically announced 30-60 days after period end. Any signal using fiscal-period variables before the announcement date is look-ahead biased."
+
+**Biotech examples:**
+> "ClinicalTrials.gov registration became mandatory in 2007. The analysis includes trials from 2000. Pre-2007 trial coverage is incomplete and skewed toward registered (typically positive or significant) trials. This understates historical termination rates."
+
+> "The PubMed sentiment analysis weights papers equally regardless of journal impact or citation count. High-profile negative results (e.g., trial failures published in NEJM) should carry more weight than low-impact positive results. The current method may overstate field sentiment."
+
 ```yaml
 data_critique:
   challenges:
@@ -90,6 +112,16 @@ Questions to answer:
 - Are there internal inconsistencies between findings from different phases?
 - What known theory or prior evidence contradicts this finding? Has it been addressed?
 - Would an informed domain expert find this conclusion surprising? If yes, is the surprise justified?
+
+**Finance examples:**
+> "Finding: regulatory filing speed predicts 30-day post-approval returns (r=0.31). Alternative explanation: pipeline quality drives both. Companies with better drugs file faster (more confident in their package) AND earn higher returns (better drugs command premium valuations). Filing speed is a proxy for drug quality, not an independent signal. Test: does the relationship hold when controlling for prior phase trial success rates?"
+
+> "Finding: the value factor outperforms during high-inflation regimes. Alternative: the sample period (1970-2024) has limited high-inflation observations outside 1970-1982. The result may be driven by a single economic episode, not a general relationship. Test: what is the confidence interval on regime-conditional Sharpe ratios separately?"
+
+**Biotech examples:**
+> "Finding: upstream pathway targets have lower Phase 2→3 transition rates. Alternative: upstream targets are newer (KRAS only became druggable post-2019) and newer targets simply have less accumulated pipeline infrastructure and development expertise, not a pathway-specific biology problem. Test: does the pattern hold within cohorts of similar target age?"
+
+> "Finding: sentiment leads trial terminations by ~3 years for PD-1. Alternative: the sentiment decline reflects the field rationally updating on early readouts from Phase 2 trials, which are the same trials that subsequently terminate. The sentiment and termination share a common cause (trial data) rather than sentiment predicting termination."
 
 ```yaml
 logic_critique:

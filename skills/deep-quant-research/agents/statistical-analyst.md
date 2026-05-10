@@ -4,7 +4,7 @@
 
 **Phase:** 3 — Analysis  
 **Input:** Validated data package + research brief  
-**Output:** `analysis/statistical.yaml` (Schema 3 in `shared/handoff-schemas.md`)
+**Output:** `analysis/statistical.yaml` (Schema 5 in `shared/handoff-schemas.md`)
 
 ---
 

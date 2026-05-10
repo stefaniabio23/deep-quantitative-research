@@ -86,14 +86,14 @@ Success criteria:
 
 ---
 
-## Refinement (after confidence scoring)
+## Refinement (after findings-evaluator)
 
-If `confidence-scorer` returns score < 6 and recommends REFINE:
+If `findings-evaluator` returns score < 5 and recommends REFINE:
 
-1. Read the refinement suggestions from `confidence.yaml`
+1. Read the refinement suggestions from `synthesis/evaluation.yaml`
 2. Identify the specific gap (insufficient data, wrong universe, confounded variable, wrong test period)
-3. Propose a modified hypothesis that addresses the gap
-4. State what is being changed and why
+3. Propose a modified hypothesis that addresses the gap — be specific about what changes and why
+4. State what the refinement is expected to fix (which score factor it targets)
 5. Confirm with user before restarting the loop
 
 Maximum 3 iterations. After 3 failed iterations, document as a null/inconclusive result and route to `report-compiler`.

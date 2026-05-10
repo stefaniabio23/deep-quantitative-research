@@ -1,12 +1,12 @@
 # deep-quant-research
 
-A structured, iterative quantitative research skill for Claude Code. Runs a 12-agent pipeline across finance, biotech, and quant domains with a confidence-scored loop that refines hypotheses until the evidence is strong enough to report.
+A structured, iterative quantitative research skill for Claude Code. Runs an 11-agent pipeline plus a three-critic adversarial cluster across finance, biotech, and quant domains, with a confidence-scored loop that refines hypotheses until the evidence is strong enough to report or returns an honest null.
 
 ---
 
 ## What it does
 
-Give it a research question. It formulates a testable hypothesis, finds and validates data, runs statistical analysis, interprets the results in domain context, stress-tests the findings, and produces a research report — all with explicit confidence scoring at each stage.
+Give it a research question. It formulates a testable hypothesis, finds and validates data, runs statistical analysis, sends the result through three blind adversarial critics (methods, data, logic), reconciles their verdicts, and produces a research report. Every phase carries explicit confidence scoring and falsification criteria.
 
 If the evidence is weak, it surfaces why and refines the hypothesis. If after three iterations there is still no reliable signal, it reports that as a null result.
 
@@ -21,13 +21,16 @@ If the evidence is weak, it surfaces why and refines the hypothesis. If after th
 
 ```
 Question
-  → Hypothesis formulation + study design
-  → Data discovery and quality audit
-  → Statistical analysis (correlation, regression, time series, backtest, causal)
-  → Plain-language interpretation with domain benchmarks
-  → Confidence score (1-10)
-       ↓ < 6: refine hypothesis and loop (max 3 iterations)
-       ↓ ≥ 6: adversarial review by skeptic agent
+  → Hypothesis formulation (testable, with falsification criteria)
+  → Originality check + knowledge-base entry
+  → Study design (method choice, evidence threshold)
+  → Data discovery + immediate quality audit (4-bias check)
+  → Analysis: stats, time-series, optional backtest + causal
+  → Critique cluster (methods + data + logic critics, parallel, blind)
+  → Findings reconciliation, interpretation, scoring (1-10)
+       ↓ FAIL: revise affected phase, max 3 loops
+       ↓ score < 6: refine hypothesis, max 3 iterations
+       ↓ score ≥ 6: pass to report
   → Final report with writing quality check
 ```
 
@@ -53,75 +56,85 @@ See [QUICKSTART.md](QUICKSTART.md) for the 5-minute guide.
 ## Usage
 
 ```
-# Full research
-Research [your question]
-Deep research on [topic]
-
-# Modes
-/thesis-test: [hypothesis to test]
-/quick: [question for a fast brief]
-/data-first: [describe your dataset]
-/literature: [topic to synthesise]
+/deep-quant-research "<your question>" [--mode <mode>]
 ```
+
+Modes:
+
+| Mode | Use case |
+|------|----------|
+| `full` (default) | Standard research question, full pipeline, critique cluster on |
+| `quick` | Fast scoping, sanity check, no backtest or causal |
+| `thesis-test` | Stress-test an investment or research thesis, all critics required |
+| `data-first` | You have data, find the story |
+| `literature` | Prior work synthesis, gap analysis, no analysis-engine |
+| `thorough` | Publication-quality, all critics required, up to 2 revision rounds |
+
 
 ---
 
 ## Structure
 
+The installable skill is self-contained inside `skills/deep-quant-research/`. Copy that one folder to `~/.claude/commands/` to install.
+
 ```
-skills/
-  deep-quant-research/      ← the installable skill (copy this to ~/.claude/commands/)
-    SKILL.md                ← orchestrator: modes, loop, routing
-    references/
-      data-sources.md       ← all APIs and their limitations
-
-agents/                     ← 12 agent definitions
-  question-sharpener.md
-  research-architect.md
-  data-scout.md
-  data-quality.md
-  statistical-analyst.md
-  timeseries-analyst.md
-  backtest-engine.md
-  causal-inference.md
-  interpret-agent.md
-  confidence-scorer.md
-  skeptic-agent.md
-  report-compiler.md
-
-shared/                     ← protocols referenced by all agents
-  statistical-standards.md  ← evidence hierarchy, test requirements, confidence rubric
-  data-quality-protocol.md  ← four-bias audit: look-ahead, survivorship, snooping, selection
-  interpretation-rubric.md  ← domain benchmarks: what a result means in finance vs. biotech vs. quant
-  output-style-guide.md     ← writing standards and anti-AI writing checklist
-  handoff-schemas.md        ← data contracts between agents
-
-scripts/                    ← Python utilities
-  fetch_data.py             ← yfinance, FRED, Fama-French, ClinicalTrials.gov, PubMed, OpenTargets, openFDA
-  statistical_analysis.py   ← correlation, regression (Newey-West), PCA, event study, Granger causality
-  timeseries.py             ← ADF/KPSS, lag analysis, STL decomposition, distance correlation, cointegration
-  backtest.py               ← walk-forward backtesting with transaction costs and drawdown
-  data_quality.py           ← outlier detection, missing data audit
+skills/deep-quant-research/    ← the installable skill
+  SKILL.md                     ← orchestrator: modes, pipeline, routing
+  agents/                      ← 10 core agents + findings-evaluator
+    question-sharpener.md
+    originality-scout.md
+    knowledge-base-builder.md
+    research-architect.md
+    data-scout-quality.md
+    analysis-engine.md
+    backtest-engine.md
+    causal-inference.md
+    findings-evaluator.md
+    report-compiler.md
+  shared/                      ← protocols referenced by all agents
+    critique-cluster.md        ← blind critique protocol (methods + data + logic critics)
+    pipeline-monitor.md        ← session state, abort conditions, revision tracking
+    statistical-standards.md   ← evidence hierarchy, test requirements, confidence rubric
+    data-quality-protocol.md   ← four-bias audit: look-ahead, survivorship, snooping, selection
+    interpretation-rubric.md   ← domain benchmarks for finance, biotech, quant
+    output-style-guide.md      ← writing standards and anti-AI checklist
+    chart-style-guide.md       ← chart conventions and diagnostic charts
+    handoff-schemas.md         ← data contracts between agents
+  scripts/                     ← Python utilities
+    fetch_data.py              ← yfinance, FRED, Fama-French, ClinicalTrials.gov, PubMed, OpenTargets, openFDA
+    statistical_analysis.py    ← correlation, regression (Newey-West), PCA, event study, Granger
+    timeseries.py              ← ADF/KPSS, lag analysis, STL decomposition, distance correlation, cointegration
+    backtest.py                ← walk-forward backtesting with transaction costs and drawdown
+    data_quality.py            ← outlier detection, missing data audit
+    chart_theme.py             ← shared matplotlib theme
+    validate_output.py         ← pipeline-monitor validation
+  references/                  ← background docs
+    data-sources.md            ← all APIs and their limitations
+    mode-guide.md              ← when to use each mode
+    troubleshooting.md         ← common failure modes
 ```
+
+The critique cluster's three critics (methods, data, logic) are defined by their checklists in `shared/critique-checklists/` rather than as separate agent files; the cluster protocol in `shared/critique-cluster.md` orchestrates them. That is why the agent table below shows 10 named agents plus the cluster.
 
 ---
 
 ## The agent team
 
-| Agent | Role |
-|-------|------|
-| `question-sharpener` | Converts vague questions into testable hypotheses with explicit success criteria |
-| `research-architect` | Designs the study: analyses, data requirements, validation approach |
-| `data-scout` | Fetches data from 8+ free APIs and web sources with provenance documentation |
-| `data-quality` | Audits for look-ahead bias, survivorship bias, data snooping, and selection bias |
-| `statistical-analyst` | Correlations (Pearson, Spearman, distance), regression, PCA, event study |
-| `timeseries-analyst` | Stationarity, lag analysis, decomposition, rolling distance correlation, cointegration |
-| `backtest-engine` | Walk-forward backtesting with transaction costs, drawdown, benchmark comparison |
-| `causal-inference` | Granger causality, difference-in-differences, confound detection |
-| `interpret-agent` | Plain-language findings with domain context and appropriate hedging |
-| `confidence-scorer` | Scores 1-10 per statistical standards; routes to refine or proceed |
-| `skeptic-agent` | Adversarial review: alternative explanations, methodology challenges, generalisability |
-| `report-compiler` | Final output with style guide and anti-AI writing check |
+| # | Agent | Role |
+|---|-------|------|
+| 1 | `question-sharpener` | Converts vague questions into testable hypotheses with explicit falsification criteria |
+| 2 | `originality-scout` | Maps prior work, scores novelty, identifies the differentiation angle |
+| 3 | `knowledge-base-builder` | Builds a durable topic entry: consensus, disputes, datasets, open questions |
+| 4 | `research-architect` | Designs the study: method choice, evidence threshold, validation approach |
+| 5 | `data-scout-quality` | Fetches data from 8+ free APIs and immediately runs the four-bias audit |
+| 6 | `analysis-engine` | Correlations (Pearson, Spearman, distance), regression, PCA, event study, time-series |
+| 7 | `backtest-engine` | Walk-forward backtesting with transaction costs, drawdown, benchmark comparison |
+| 8 | `causal-inference` | Granger causality, difference-in-differences, confound detection |
+| 9 | **critique cluster** | `methods-critic` + `data-critic` + `logic-critic`. Parallel, blind, adversarial. |
+| 10 | `findings-evaluator` | Reconciles critic verdicts; routes to revision, proceed, or human review |
+| 11 | `report-compiler` | Final output with style guide and anti-AI writing check |
+
+The critique cluster runs at three points in the pipeline (after analysis, after synthesis, after the report draft). Each critic sees only the work it is reviewing plus its checklist, never the other critics' verdicts or the producing agent's reasoning. That isolation is the point: it forces independent challenges from three angles and surfaces failure modes that a single reviewer would miss.
 
 ---
 
@@ -142,11 +155,13 @@ scripts/                    ← Python utilities
 
 ## Extending the system
 
-**Add a new agent:** Create a file in `agents/` following the template in [CONTRIBUTING.md](CONTRIBUTING.md).
+**Add a new agent:** Create a file in `skills/deep-quant-research/agents/` following the template in [CONTRIBUTING.md](CONTRIBUTING.md). Reference it from the relevant mode block in `SKILL.md`.
+
+**Add a critic:** Add a checklist to `skills/deep-quant-research/shared/critique-checklists/` and register the trigger point in `shared/critique-cluster.md`. New critics inherit the blind-review protocol automatically.
 
 **Add domain context:** Create a domain context skill (e.g., `oncology-genomics-context/`) in the repo root. The orchestrator detects loaded context skills and incorporates them into the research design phase.
 
-**Add a data source:** Extend `scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
+**Add a data source:** Extend `skills/deep-quant-research/scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
 
 ---
 
@@ -160,4 +175,4 @@ scripts/                    ← Python utilities
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT, see [LICENSE](LICENSE)

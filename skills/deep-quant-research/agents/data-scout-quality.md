@@ -4,7 +4,7 @@
 
 **Phase:** 2 — Data
 **Input:** `research_brief.yaml`
-**Output:** Raw data files + `data/data_package.yaml` (Schema 2 in `shared/handoff-schemas.md`)
+**Output:** Raw data files + `data/data_package.yaml` (Schema 4 in `shared/handoff-schemas.md`)
 
 ---
 
@@ -116,7 +116,31 @@ For each flagged observation: check against known events (corporate actions, mac
 
 For each variable: calculate % missing, flag anything > 20%, assess whether missingness is random or systematic.
 
-### Step 9: Enforce the verdict
+### Step 9: Category homogeneity check
+
+For any categorical variable that will be used as a unit of analysis (target, MOA, sector, factor group, region, sponsor type, etc.), verify the category labels carve the data at biologically/economically defensible joints — not at convenient labels that lump heterogeneous content.
+
+**The check.** For each category with more than ~10 distinct underlying entities (drugs, tickers, securities, etc.), list those entities and ask: would a domain expert agree these belong in the same bucket?
+
+**Failure modes to flag:**
+- One "target" name covers chemically heterogeneous interventions (e.g., `TUBB4B` containing taxanes + vinca alkaloids + epothilones + anti-tubulin ADCs — a pharmacological bucket, not a target).
+- One "sector" name spans sub-sectors with structurally different economics (e.g., generic "Healthcare" containing pharma + medtech + payors).
+- One "factor" name sums sub-factors with opposite expected signs.
+
+**What to do.**
+- If the category is biologically/economically defensible (e.g., 30 EGFR inhibitors all hitting the same protein): document and proceed.
+- If the category is a heterogeneous bucket: either re-label, split, or drop from the cells used for inference. Note in `data_package.yaml`.
+
+**Concretely.** For a biotech POS analysis classified by target, the audit should produce a table like:
+
+| Category | N entities | Sample entities | Verdict |
+|----------|-----------|-----------------|---------|
+| EGFR | 39 | erlotinib, gefitinib, osimertinib, ... | HOMOGENEOUS |
+| TUBB4B | 40 | paclitaxel, vinblastine, brentuximab vedotin, ... | HETEROGENEOUS — relabel or drop |
+
+**Why this matters.** A heterogeneous category creates spurious signal: comparing "EGFR vs TUBB4B P3-ratios" is not a target-level comparison if TUBB4B is actually "anti-tubulin chemotherapy" of all kinds. The data look clean — every row has a target name — but the inference is broken.
+
+### Step 10: Enforce the verdict
 
 **PROCEED:** Route to analysis immediately.
 
@@ -149,8 +173,14 @@ data_package:
     survivorship_bias: PASS | WARN | FAIL
     data_snooping_risk: PASS | WARN | FAIL
     selection_bias: PASS | WARN | FAIL
+    category_homogeneity: PASS | WARN | FAIL
     verdict: PROCEED | PROCEED_WITH_CAVEATS | DO_NOT_PROCEED
     caveats: [list]
+    heterogeneous_categories:  # only if category_homogeneity != PASS
+      - name: string
+        n_entities: integer
+        sample_entities: [list]
+        action: relabel | split | drop | proceed_with_caveat
   preprocessing_applied:
     - step: string
       rationale: string

@@ -145,6 +145,34 @@ Every test must comply with `shared/statistical-standards.md`:
 - Apply Newey-West HAC standard errors for all time series regressions
 - Apply multiple testing correction when running > 1 test; state correction method
 
+**Default to bootstrap CIs on every headline ratio, delta, or aggregate statistic in the analysis output. Do not wait for the methods-critic to flag it.** The most common cause of avoidable revision rounds is the analysis-engine reporting a point estimate without a CI on it.
+
+Concretely, for the headline numbers in `analysis/statistical.yaml`:
+
+```python
+import numpy as np
+rng = np.random.default_rng(42)
+
+# Bootstrap CI on a sample statistic — default 5000 iterations, percentile method
+def bootstrap_ci(values, statistic, n_iter=5000, alpha=0.05):
+    boot = np.array([
+        statistic(rng.choice(values, size=len(values), replace=True))
+        for _ in range(n_iter)
+    ])
+    return float(np.percentile(boot, 100 * alpha / 2)), float(np.percentile(boot, 100 * (1 - alpha / 2)))
+
+# Bootstrap CI on a ratio of ratios from a contingency table
+def bootstrap_ratio_of_ratios_ci(df, group_col, outcome_col, n_iter=5000, alpha=0.05):
+    boot = []
+    for _ in range(n_iter):
+        s = df.sample(len(df), replace=True, random_state=int(rng.integers(1<<32)))
+        # ... compute ratio of ratios on s ...
+        boot.append(ror)
+    return float(np.percentile(boot, 100 * alpha / 2)), float(np.percentile(boot, 100 * (1 - alpha / 2)))
+```
+
+When N is small (< 30 cells), bootstrap CIs are wide and that is informative — report them anyway. A wide CI told plainly is more useful than a narrow one obtained by ignoring uncertainty.
+
 ### Step 5: Run robustness checks
 
 For each primary finding:
@@ -161,8 +189,8 @@ List every test performed — including those with non-significant results. This
 ### Step 7: Write outputs
 
 Produce:
-- `analysis/statistical.yaml` — Schema 3 from `shared/handoff-schemas.md`
-- `analysis/timeseries.yaml` — Schema 3 extension
+- `analysis/statistical.yaml` — Schema 5 from `shared/handoff-schemas.md`
+- `analysis/timeseries.yaml` — Schema 5 (same structure, analyst field = "timeseries")
 - `analysis/charts/` — any charts generated
 
 Include negative results. Include robustness check results.

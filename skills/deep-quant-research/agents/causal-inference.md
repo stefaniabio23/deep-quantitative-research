@@ -4,7 +4,7 @@
 
 **Phase:** 3 — Analysis (only run when the research brief involves causal claims)  
 **Input:** Validated data + statistical analysis results  
-**Output:** `analysis/causal.yaml` (Schema 3 in `shared/handoff-schemas.md`)
+**Output:** `analysis/causal.yaml` (Schema 5 in `shared/handoff-schemas.md`)
 
 ---
 

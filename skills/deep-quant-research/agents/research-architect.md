@@ -41,6 +41,7 @@ From the available analysis agents, determine which are needed:
 
 For `quick` mode: statistical-analyst only, unless the question is explicitly time-series.
 For `literature` mode: no analysis agents; web research only.
+For `data-first` mode: statistical-analyst + timeseries-analyst; backtest only if explicitly requested.
 
 ### Step 3: Specify data requirements
 
@@ -67,7 +68,7 @@ Present a concise study design summary:
 - Data sources (bulleted list)
 - Estimated scope (is this a 20-minute or 2-hour analysis?)
 
-Ask for confirmation or adjustments before routing to `data-scout`.
+Ask for confirmation or adjustments before routing to `data-scout-quality`.
 
 ---
 
@@ -90,7 +91,7 @@ Ask for confirmation or adjustments before routing to `data-scout`.
 
 ### Biotech: Clinical trial signal
 1. Define the trial universe (disease area, phase, period)
-2. data-scout: ClinicalTrials.gov + OpenTargets + PubMed
+2. data-scout-quality: ClinicalTrials.gov + OpenTargets + PubMed
 3. statistical-analyst: compare outcome metrics across subgroups (biomarker-selected vs. all-comers, mechanism A vs. B)
 4. If price data available: event study around trial readout dates
 5. literature mode for contextual synthesis

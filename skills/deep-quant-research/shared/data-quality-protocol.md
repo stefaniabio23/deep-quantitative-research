@@ -1,6 +1,6 @@
 # Data Quality Protocol
 
-Mandatory checks performed by the `data-quality` agent before any analysis begins.
+Mandatory checks performed by the `data-scout-quality` agent before any analysis begins.
 Every dataset entering the analysis pipeline must pass this protocol.
 
 ---

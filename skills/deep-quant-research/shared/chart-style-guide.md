@@ -111,3 +111,53 @@ save_chart(fig, "indication_heatmap", output_dir)
 ```
 
 Naming: `chart_[slug].png`. No spaces, no uppercase.
+
+---
+
+## Diagnostic charts
+
+Every analysis report ships a sample-size diagnostic alongside the headline chart. A reader should never have to dig into a CSV to find out which cells the headline rests on. Burying the per-cell N table is the most common reason analysis reports survive review and then collapse on a careful re-read.
+
+**Three diagnostic chart conventions to use whenever the analysis aggregates by category.**
+
+### 1. Sample-size heatmap
+
+Same axes as the headline chart. Colour intensity = N (drugs, trials, observations). Cells below the pre-registered minimum-N filter are greyed out, not coloured.
+
+```python
+# Example: sample-size heatmap for (target, indication) cells
+import numpy as np
+fig, ax = plt.subplots(figsize=(12, 8))
+mask = pivot_n < min_n
+ax.imshow(np.where(mask, np.nan, pivot_n), cmap="Blues", aspect="auto")
+# annotate cells with N; below-threshold cells annotated with "•"
+```
+
+Place this directly above the headline chart, on the same horizontal scale, in any report.
+
+### 2. Coverage table
+
+A small chart, not a markdown table. One bar per category showing N. Pre-registered minimum-N threshold drawn as a vertical line. Sort descending. Cap at 20 categories — the long tail goes in an appendix.
+
+This makes "what fraction of cells survive the filter" visually obvious at a glance. In the biotech-pos session 14 of 663 cells survived; reporting that as "2.1% of cells" is honest, but a coverage chart makes it impossible to skim past.
+
+### 3. Before-and-after stratification side-by-side
+
+Whenever an analysis introduces a stratification or adjustment that materially changes the headline (sponsor stratification, factor adjustment, regime conditioning), produce a two-panel side-by-side:
+
+- Left panel: unadjusted version of the headline chart
+- Right panel: adjusted/stratified version
+- Same axes, same colour scale, same cell ordering
+
+If the right panel looks dramatically different from the left, that **is** the finding. Forcing the reader to flip between two single-panel charts hides the comparison.
+
+```python
+fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+# left: raw P3-ratio per cell
+# right: sponsor-adjusted P3-ratio per cell
+fig.suptitle("Sponsor adjustment collapses the divergence pattern", fontweight="bold")
+```
+
+### When to skip diagnostic charts
+
+If the headline analysis runs on a single, dense, well-balanced dataset (e.g., daily S&P 500 returns over 30 years), diagnostic charts add noise. Use judgement. The trigger is: aggregation by category with cells of unequal size. Whenever that's true, ship the diagnostic.

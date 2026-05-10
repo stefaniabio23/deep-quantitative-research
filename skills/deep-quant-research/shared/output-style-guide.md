@@ -1,7 +1,7 @@
 # Output Style Guide
 
 Standards for all written output from the deep-quant-research skill.
-Applied by `report-compiler` agent. Referenced by `interpret-agent`.
+Applied by `report-compiler` agent. Referenced by `findings-evaluator`.
 
 ---
 
@@ -92,10 +92,10 @@ Robustness and Limitations
 [What was tested beyond the primary analysis. What the analysis cannot say.]
 
 Confidence Assessment
-[Score from confidence-scorer with reasoning.]
+[Score from findings-evaluator with reasoning.]
 
-Skeptic Challenges and Responses
-[From skeptic-agent. Each challenge, the response, and residual risk.]
+Challenges and Responses
+[From findings-evaluator. Each challenge, the response, and residual risk.]
 
 Data Sources
 [List with dates accessed and any provenance notes.]
