@@ -1,4 +1,4 @@
-# deep-quant-research
+# deep-research
 
 A structured, iterative quantitative research skill for Claude Code. Runs an 11-agent pipeline plus a three-critic adversarial cluster across finance, biotech, and quant domains, with a confidence-scored loop that refines hypotheses until the evidence is strong enough to report or returns an honest null.
 
@@ -13,7 +13,7 @@ If the evidence is weak, it surfaces why and refines the hypothesis. If after th
 **Research types supported:**
 - **Finance:** KPI-to-price analysis, factor decomposition, backtesting, lag analysis, earnings quality, event studies
 - **Biotech:** Clinical trial signal extraction, drug pipeline analysis, genomic data interpretation, literature synthesis
-- **Quant:** Factor models, macro relationships, dependence structures (including distance correlation), regime analysis
+- **Quantitative signals explored:** Factor models, macro relationships, dependence structures (including distance correlation), regime analysis
 
 ---
 
@@ -40,7 +40,7 @@ Question
 
 ```bash
 # 1. Copy skill to Claude Code skills directory
-cp -r skills/deep-quant-research ~/.claude/commands/
+cp -r skills/deep-research ~/.claude/commands/
 
 # 2. Install Python dependencies
 pip install -r requirements.txt
@@ -56,7 +56,7 @@ See [QUICKSTART.md](QUICKSTART.md) for the 5-minute guide.
 ## Usage
 
 ```
-/deep-quant-research "<your question>" [--mode <mode>]
+/deep-research "<your question>" [--mode <mode>]
 ```
 
 Modes:
@@ -75,10 +75,10 @@ Modes:
 
 ## Structure
 
-The installable skill is self-contained inside `skills/deep-quant-research/`. Copy that one folder to `~/.claude/commands/` to install.
+The installable skill is self-contained inside `skills/deep-research/`. Copy that one folder to `~/.claude/commands/` to install.
 
 ```
-skills/deep-quant-research/    ← the installable skill
+skills/deep-research/    ← the installable skill
   SKILL.md                     ← orchestrator: modes, pipeline, routing
   agents/                      ← 10 core agents + findings-evaluator
     question-sharpener.md
@@ -155,13 +155,13 @@ The critique cluster runs at three points in the pipeline (after analysis, after
 
 ## Extending the system
 
-**Add a new agent:** Create a file in `skills/deep-quant-research/agents/` following the template in [CONTRIBUTING.md](CONTRIBUTING.md). Reference it from the relevant mode block in `SKILL.md`.
+**Add a new agent:** Create a file in `skills/deep-research/agents/` following the template in [CONTRIBUTING.md](CONTRIBUTING.md). Reference it from the relevant mode block in `SKILL.md`.
 
-**Add a critic:** Add a checklist to `skills/deep-quant-research/shared/critique-checklists/` and register the trigger point in `shared/critique-cluster.md`. New critics inherit the blind-review protocol automatically.
+**Add a critic:** Add a checklist to `skills/deep-research/shared/critique-checklists/` and register the trigger point in `shared/critique-cluster.md`. New critics inherit the blind-review protocol automatically.
 
 **Add domain context:** Create a domain context skill (e.g., `oncology-genomics-context/`) in the repo root. The orchestrator detects loaded context skills and incorporates them into the research design phase.
 
-**Add a data source:** Extend `skills/deep-quant-research/scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
+**Add a data source:** Extend `skills/deep-research/scripts/fetch_data.py` and document in `skills/deep-research/references/data-sources.md`.
 
 ---
 
