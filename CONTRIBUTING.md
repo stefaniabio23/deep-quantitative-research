@@ -6,15 +6,17 @@ Contributions are welcome. This document covers how to add new agents, scripts, 
 
 ## What can be contributed
 
-**New agents** — add to `agents/`. Follow the template: Role, Phase, Input/Output, Procedure.
+**New agents**, add to `skills/deep-quant-research/agents/`. Follow the template: Role, Phase, Input/Output, Procedure. Register the agent in the relevant mode block of `skills/deep-quant-research/SKILL.md`.
 
-**New scripts** — add to `scripts/`. Must accept `--output` as YAML path, print progress to stdout, handle errors gracefully.
+**New scripts**, add to `skills/deep-quant-research/scripts/`. Must accept `--output` as YAML path, print progress to stdout, handle errors gracefully.
 
-**New data sources** — add to `scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
+**New data sources**, extend `skills/deep-quant-research/scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
 
-**Domain context skills** — skills that add specialist knowledge to a specific research area. Place in their own folder at the repo root alongside `skills/`. See `Domain Context Skills` below.
+**Domain context skills**, skills that add specialist knowledge to a specific research area. Place in their own folder at the repo root alongside `skills/`. See `Domain Context Skills` below.
 
-**Shared protocols** — additions to `shared/` for new statistical methods, interpretation rubrics, or style conventions.
+**Shared protocols**, additions to `skills/deep-quant-research/shared/` for new statistical methods, interpretation rubrics, or style conventions.
+
+**New critique checklist**, add to `skills/deep-quant-research/shared/critique-checklists/` and register the trigger point in `skills/deep-quant-research/shared/critique-cluster.md`.
 
 ---
 
@@ -90,8 +92,8 @@ Python scripts:
 ## Testing
 
 Before submitting:
-1. Verify `SKILL.md` frontmatter passes YAML lint
-2. Run `python scripts/[script].py --help` to confirm CLI works
+1. Verify `skills/deep-quant-research/SKILL.md` frontmatter passes YAML lint
+2. Run `python skills/deep-quant-research/scripts/[script].py --help` to confirm CLI works
 3. Run a minimal end-to-end test with the trigger phrase documented in the PR
 
 ---

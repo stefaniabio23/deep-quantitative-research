@@ -2,35 +2,42 @@
 
 All notable changes to deep-quant-research are documented here.
 
-Format: [version] — date — summary
+Format: [version], date, summary
 
 ---
 
-## [1.0.0] — 2026-05-08
+## [2.0.0], 2026-06-08
 
-Initial release — includes blind critique cluster.
+Repo canonicalisation and agent consolidation. The installable skill is now self-contained inside `skills/deep-quant-research/`; the duplicated root-level `agents/`, `shared/`, and `scripts/` trees have been removed. Pre-cleanup state preserved at git tag `pre-cleanup-2026-06-08`.
+
+### Agent team (10 named agents + critique cluster)
+- `question-sharpener`, `originality-scout`, `knowledge-base-builder`, `research-architect`, `data-scout-quality`, `analysis-engine`, `backtest-engine`, `causal-inference`, `findings-evaluator`, `report-compiler`
+- Critique cluster: `methods-critic`, `data-critic`, `logic-critic` defined by checklists in `shared/critique-checklists/`, orchestrated by `shared/critique-cluster.md`
+
+### Migration from 1.0
+- `data-scout` + `data-quality` consolidated into `data-scout-quality` (fetch and audit in one agent so look-ahead bias is caught before analysis)
+- `statistical-analyst` + `timeseries-analyst` consolidated into `analysis-engine`
+- `interpret-agent` + `confidence-scorer` + `skeptic-agent` folded into `findings-evaluator` with PASS/REVISE/FAIL gates
+- Added `originality-scout` (prior-work survey, novelty score)
+- Added `knowledge-base-builder` (durable topic entry: consensus, disputes, datasets, open questions)
+- Critique-cluster checklists moved into the skill folder so install is one `cp -r`
+
+### Scripts
+- Added `chart_theme.py` (shared matplotlib theme) and `validate_output.py` (pipeline-monitor validation)
+
+---
+
+## [1.0.0], 2026-05-08
+
+Initial release. Includes blind critique cluster.
 
 ### Skill
 - `deep-quant-research` orchestrator with 5 modes: full, quick, thesis-test, data-first, literature
 - Research type auto-detection: biotech, finance, quant, mixed
 - Iterative confidence-scored loop with up to 3 refinement cycles
 
-### Agent team (12 agents)
-- `findings-evaluator` — blind critique cluster reconciliation with PASS/REVISE/FAIL gates and human_review escalation
-
 ### Agent team (13 agents)
-- `question-sharpener` — hypothesis formulation with success criteria
-- `research-architect` — study design per research type
-- `data-scout` — data discovery and fetching across 8+ sources
-- `data-quality` — four-bias audit protocol
-- `statistical-analyst` — correlation, regression, PCA, event study, Granger causality
-- `timeseries-analyst` — stationarity, lag analysis, decomposition, DC, cointegration
-- `backtest-engine` — walk-forward backtesting with transaction costs
-- `causal-inference` — Granger, DiD, confound detection
-- `interpret-agent` — domain-contextualised findings
-- `confidence-scorer` — 1-10 scoring with loop/proceed decision
-- `skeptic-agent` — adversarial review and alternative explanations
-- `report-compiler` — multi-template output with writing quality check
+- `question-sharpener`, `research-architect`, `data-scout`, `data-quality`, `statistical-analyst`, `timeseries-analyst`, `backtest-engine`, `causal-inference`, `interpret-agent`, `confidence-scorer`, `skeptic-agent`, `findings-evaluator`, `report-compiler`
 
 ### Blind critique cluster
 - `critique-cluster.md` — protocol: isolated critics, PASS/REVISE/FAIL schema, retry policy, escalation rules
