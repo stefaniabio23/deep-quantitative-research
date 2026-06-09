@@ -45,5 +45,5 @@ validation:
 
 outputs:
   signal_card: true
-  dashboard: false
+  dashboard: true
   experiment_log: true

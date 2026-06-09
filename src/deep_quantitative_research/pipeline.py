@@ -19,6 +19,7 @@ import pandas as pd
 import yaml
 
 from .backtest.kpi_backtest import run_kpi_backtest
+from .dashboard import render_dashboard
 from .features import assess as assess_feature_search
 from .features.grid import build_grid
 from .reporting.signal_card import render_signal_card
@@ -251,6 +252,17 @@ def run_signal(
 
     card = render_signal_card(spec, backtest, validation, cadence_audits=cadence_audits)
     (run_dir / "signal-card.md").write_text(card)
+
+    if spec.outputs.get("dashboard"):
+        dashboard_html = render_dashboard(
+            spec,
+            backtest,
+            validation,
+            target_series=target_rolled,
+            predictor_series=best_feature_series,
+            cadence_audits=cadence_audits,
+        )
+        (run_dir / "dashboard.html").write_text(dashboard_html)
 
     return RunSummary(
         run_dir=run_dir,

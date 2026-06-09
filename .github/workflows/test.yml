@@ -64,12 +64,24 @@ jobs:
           set -euo pipefail
           for f in run.yaml cadence-rollup-audit.yaml feature-grid.yaml \
                    feature-search-log.yaml backtest-result.yaml \
-                   validation-report.yaml signal-card.md; do
+                   validation-report.yaml signal-card.md dashboard.html; do
             test -s "examples/biotech-pos/expected-output/${f}" \
               || { echo "missing or empty: ${f}"; exit 1; }
           done
 
-      - name: Verify demo output stays deterministic
+      - name: Verify demo headline result is unchanged
+        # Byte-level diff is too strict (matplotlib PNG bytes and timestamp
+        # fields drift across runs). Assert the values the validation gate
+        # is supposed to produce.
         run: |
-          git diff --exit-code examples/biotech-pos/expected-output/ \
-            || { echo "demo output drifted; rerun ./examples/biotech-pos/run.sh and commit"; exit 1; }
+          set -euo pipefail
+          python - <<'PY'
+          import yaml
+          br = yaml.safe_load(open('examples/biotech-pos/expected-output/backtest-result.yaml'))
+          vr = yaml.safe_load(open('examples/biotech-pos/expected-output/validation-report.yaml'))
+          assert br['best_feature'] == 'aact::raw::lag_1', br['best_feature']
+          assert br['verdict']['survives_oos'] is True, br['verdict']
+          assert vr['confidence_cap'] == 'medium', vr['confidence_cap']
+          assert vr['binding_constraint'] == 'sample_size', vr['binding_constraint']
+          print('demo headline result: OK')
+          PY
