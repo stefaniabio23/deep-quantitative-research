@@ -1,0 +1,29 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: ValidationReport
+type: object
+required: [signal_id, checked_at, checks, confidence_cap, binding_constraint]
+properties:
+  signal_id: {type: string}
+  registry_commit: {type: [string, "null"]}
+  checked_at: {type: string}
+  checks:
+    type: array
+    items:
+      type: object
+      required: [name, verdict]
+      properties:
+        name: {type: string}
+        verdict:
+          enum: [pass, warn, fail]
+        value: {}
+        threshold: {}
+        explanation: {type: string}
+  confidence_cap:
+    enum: [low, medium, high]
+  binding_constraint:
+    type: [string, "null"]
+  relationship_type:
+    enum: [causal, proxy, coincident, lagging, mechanically_linked, spurious, regime_dependent, unknown]
+  recommended_next_iterations:
+    type: array
+    items: {type: string}

@@ -1,0 +1,63 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: DatasetContract
+type: object
+required: [dataset_id, role, registry_commit, fields, join_keys, cadence, variable, timing, quality]
+properties:
+  dataset_id: {type: string}
+  role:
+    enum: [target, predictor, context, benchmark]
+  registry_commit: {type: [string, "null"]}
+  fields:
+    type: object
+    properties:
+      date_field: {type: [string, "null"]}
+      value_field: {type: [string, "null"]}
+      entity_fields:
+        type: array
+        items: {type: string}
+  join_keys:
+    type: object
+    properties:
+      required:
+        type: array
+        items: {type: string}
+      available:
+        type: array
+        items: {type: string}
+      missing:
+        type: array
+        items: {type: string}
+  cadence:
+    type: object
+    required: [native_cadence, target_cadence, aggregation]
+    properties:
+      native_cadence:
+        enum: [daily, weekly, monthly, quarterly, annual, irregular]
+      target_cadence:
+        enum: [monthly, quarterly, annual]
+      aggregation:
+        enum: [sum, mean, last, max, min, median]
+  variable:
+    type: object
+    required: [variable_type]
+    properties:
+      variable_type:
+        enum: [flow, stock, rate, price, count, sentiment, event]
+      unit: {type: [string, "null"]}
+      transform_allowed: {type: boolean}
+  timing:
+    type: object
+    properties:
+      release_lag_days: {type: [integer, "null"], minimum: 0}
+      point_in_time_safe: {type: [boolean, "null"]}
+      revisions_possible: {type: [boolean, "null"]}
+  quality:
+    type: object
+    properties:
+      coverage_start: {type: [string, "null"]}
+      coverage_end: {type: [string, "null"]}
+      missingness_policy:
+        enum: [error, drop, forward_fill, interpolate, flag]
+      known_limitations:
+        type: array
+        items: {type: string}

@@ -1,0 +1,43 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: Hypothesis
+description: |
+  Output of the hypothesis-formulation sub-skill. Drives every later stage.
+type: object
+required: [hypothesis_id, statement, target_variable, target_cadence, expected_direction, mechanism, candidate_predictors, falsification]
+properties:
+  hypothesis_id:
+    type: string
+    pattern: "^HYP-[0-9]{4}-[0-9]+$"
+  statement: {type: string, minLength: 10}
+  domain:
+    enum: [finance, biotech, macro, mixed]
+  target_variable: {type: string}
+  target_cadence:
+    enum: [monthly, quarterly, annual]
+  expected_direction:
+    enum: [positive, negative, non-monotonic]
+  expected_lag_periods:
+    type: array
+    items: {type: integer, minimum: 0}
+  mechanism: {type: string, minLength: 10}
+  candidate_predictors:
+    type: array
+    minItems: 1
+    items: {type: string}
+  upstream_variables:
+    type: array
+    items: {type: string}
+  downstream_effects:
+    type: array
+    items: {type: string}
+  knock_on_effects:
+    type: array
+    items: {type: string}
+  falsification:
+    type: array
+    minItems: 2
+    items: {type: string, minLength: 5}
+  created_at: {type: string}
+  status:
+    enum: [candidate, refined, locked, retired]
+  notes: {type: string}

@@ -1,0 +1,19 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: FeatureGrid
+type: object
+required: [signal_id, predictor_dataset_ids, enabled_transforms, max_features, max_lags, lags, features_emitted]
+properties:
+  signal_id: {type: string}
+  predictor_dataset_ids:
+    type: array
+    items: {type: string}
+  enabled_transforms:
+    type: array
+    items: {type: string}
+  max_features: {type: integer, minimum: 1}
+  max_lags: {type: integer, minimum: 0}
+  lags:
+    type: array
+    items: {type: integer, minimum: 0}
+  features_emitted: {type: integer, minimum: 0}
+  truncated_at_max_features: {type: boolean}

@@ -1642,14 +1642,19 @@ Add to root `CLAUDE.md`:
 - [x] Add 5 references (datasource-registry-interface, cadence-roll-up, feature-engineering-guardrails, backtesting-pitfalls, statistical-validation).
 - [ ] visual-display, dashboard-builder, causal-inference sub-skill content. **Deferred to Phase 7.**
 
-### Phase 4, Python Engine
+### Phase 4, Python Engine ✅ COMPLETED 2026-06-09 (vertical slice)
 
-- [ ] Move script logic into `src/`.
-- [ ] Add CLI.
-- [ ] Add argument validation.
-- [ ] Add clear errors.
-- [ ] Add schemas.
-- [ ] Add output writers.
+- [x] Move execution logic into `src/deep_quantitative_research/` (timeseries, features, backtest, validation, reporting, pipeline).
+- [x] Add CLI (`deep-quant run-signal`).
+- [x] Add argument validation (click + explicit checks in `pipeline.py`).
+- [x] Add clear errors (CadenceError, SchemaError, KeyError on missing predictors with helpful messages).
+- [x] Add schemas (6 JSON Schemas + validator helper in `schemas/__init__.py`).
+- [x] Add output writers (run.yaml, cadence-rollup-audit.yaml, feature-grid.yaml, feature-search-log.yaml, backtest-result.yaml, validation-report.yaml, signal-card.md).
+- [x] End-to-end pytest with synthetic data (`tests/test_pipeline_e2e.py`); CLI smoke verified.
+- [ ] Trading backtest (tradable signal mode). **Deferred to Phase 4b.**
+- [ ] Stationarity tests (ADF/KPSS), autocorrelation, robustness sensitivity. **Deferred to Phase 4b.**
+- [ ] Causal checks module. **Deferred to Phase 4b.**
+- [ ] formulate-hypothesis, design-signal, find-datasets, validate-signal, render-signal-card CLI subcommands. **Deferred to Phase 4b.**
 
 ### Phase 5, Tests
 
@@ -1766,6 +1771,7 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 - 2026-06-09: Phase 2 (Datasources Integration) completed. Registry client reads CSVs natively; DuckDB and join_key_graph deferred since datasources MVP forbids new generated outputs. All 19 unit tests green; live registry healthcheck returns 52 sources / 283 datasets / 1756 fields / 73 join keys.
 - 2026-06-09: Phase 3 (Core Research Workflow) completed. Nine sub-skill SKILL.mds written with full procedures, hard rules, output schemas, and worked examples (hypothesis-formulation, datasource-query, dataset-selection, dataset-contract, cadence-roll-up, feature-engineering, time-series-backtest, statistical-validation, signal-synthesis). Five canonical templates and five reference docs added.
 - 2026-06-09: Loops dropped. The earlier Phase 3b plan to add a Claude Agent SDK orchestrator is cancelled at user request. v3 has no orchestrator loop. The pipeline is driven by per-stage commands and the sub-skill specs; refinement is a manual rerun, not an automated control loop.
+- 2026-06-09: Phase 4 (vertical slice) completed. SignalSpec → cadence rollup → controlled feature grid → KPI backtest → validation gate → signal card. 6 JSON Schemas, 12 Python modules (timeseries, features, backtest, validation, reporting, pipeline, schemas, research), `deep-quant run-signal` CLI command, 56 new tests (75 total). Trading backtest, stationarity tests, causal checks, and the find-datasets / formulate-hypothesis / design-signal / validate-signal / render-signal-card CLI subcommands deferred to Phase 4b.
 - 2026-06-09: Note for future. Datasources CLAUDE.md updated to "one entry per source" model with sub-datasets discovered via provider metadata endpoints rather than materialised in datasets.csv / fields.csv. The deep-quant registry client already handles missing CSVs gracefully (returns empty lists). When datasources regenerates under the new model, retest the client and adapt the synthesis logic if needed.
 
 ---

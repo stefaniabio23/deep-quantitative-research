@@ -191,5 +191,75 @@ def assess_join_cmd(source_dataset: str, target_dataset: str, config: str | None
     click.echo(yaml.safe_dump(assessment.to_dict(), sort_keys=False))
 
 
+@main.command("run-signal")
+@click.option("--spec", "spec_path", required=True, type=click.Path(exists=True), help="Path to the SignalSpec YAML.")
+@click.option("--target-csv", required=True, type=click.Path(exists=True), help="CSV with date,value for the target series.")
+@click.option(
+    "--predictor-csv",
+    "predictor_csv",
+    multiple=True,
+    required=True,
+    help='Predictor data, format "dataset_id=path/to.csv". Repeat per predictor.',
+)
+@click.option("--run-dir", default=None, type=click.Path(), help="Output directory. Defaults to experiments/runs/<iso-date>-<signal_id>/.")
+@click.option("--date-col", default="date", show_default=True, help="Date column name in the CSVs.")
+@click.option("--value-col", default="value", show_default=True, help="Value column name in the CSVs.")
+@click.option("--config", default=None, help="Path to config/datasources.yaml (for registry commit hash).")
+def run_signal_cmd(
+    spec_path: str,
+    target_csv: str,
+    predictor_csv: tuple[str, ...],
+    run_dir: str | None,
+    date_col: str,
+    value_col: str,
+    config: str | None,
+) -> None:
+    """Run the SignalSpec end-to-end against CSVs on disk and write the artefacts."""
+    from .pipeline import run_signal_from_paths
+
+    predictor_map: dict[str, Path] = {}
+    for entry in predictor_csv:
+        if "=" not in entry:
+            click.echo(f"error: --predictor-csv must be 'dataset_id=path', got {entry!r}", err=True)
+            sys.exit(2)
+        key, path = entry.split("=", 1)
+        predictor_map[key.strip()] = Path(path.strip())
+
+    if run_dir is None:
+        import yaml as _yaml
+
+        spec_obj = _yaml.safe_load(Path(spec_path).read_text())
+        slug = spec_obj.get("signal_id", "unnamed")
+        from datetime import date
+
+        run_dir = str(Path("experiments") / "runs" / f"{date.today().isoformat()}-{slug}")
+
+    registry_commit: str | None = None
+    try:
+        client = _client_or_die(config) if config else get_client()
+        registry_commit = client.commit_hash()
+    except SystemExit:
+        registry_commit = None
+    except Exception:
+        registry_commit = None
+
+    summary = run_signal_from_paths(
+        spec_path=spec_path,
+        target_csv=target_csv,
+        predictor_csvs=predictor_map,
+        run_dir=run_dir,
+        registry_commit=registry_commit,
+        date_col=date_col,
+        value_col=value_col,
+    )
+
+    click.echo(f"run_dir:              {summary.run_dir}")
+    click.echo(f"signal_id:            {summary.signal_id}")
+    click.echo(f"best_feature:         {summary.best_feature}")
+    click.echo(f"confidence_cap:       {summary.confidence_cap}")
+    click.echo(f"binding_constraint:   {summary.binding_constraint or '(none)'}")
+    click.echo(f"survives_oos:         {summary.survives_oos}")
+
+
 if __name__ == "__main__":
     main()

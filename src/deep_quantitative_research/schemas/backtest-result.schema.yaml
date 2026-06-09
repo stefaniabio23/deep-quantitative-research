@@ -1,0 +1,46 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: BacktestResult
+type: object
+required: [mode, signal_id, target, best_feature, period, metrics_kpi, verdict]
+properties:
+  mode:
+    enum: [kpi_prediction, tradable_signal]
+  signal_id: {type: string}
+  target: {type: string}
+  best_feature: {type: string}
+  period:
+    type: object
+    required: [train, test]
+    properties:
+      train: {type: string}
+      test: {type: string}
+  walk_forward: {type: boolean}
+  regime_split: {type: boolean}
+  metrics_kpi:
+    type: object
+    properties:
+      correlation_train: {type: number}
+      correlation_test: {type: number}
+      rank_correlation_test: {type: number}
+      directional_accuracy_train: {type: number}
+      directional_accuracy_test: {type: number}
+      mae_test: {type: number}
+      mape_test: {type: number}
+      rmse_test: {type: number}
+      hit_rate_test: {type: number}
+      lead_lag_profile:
+        type: array
+        items:
+          type: object
+          properties:
+            lag: {type: integer}
+            corr: {type: number}
+      oos_degradation_pct: {type: number}
+  verdict:
+    type: object
+    required: [survives_oos, confidence]
+    properties:
+      survives_oos: {type: boolean}
+      confidence:
+        enum: [low, medium, high]
+      notes: {type: string}
