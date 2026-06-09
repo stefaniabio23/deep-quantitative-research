@@ -45,7 +45,11 @@ feature-search-log.yaml        pre-specified vs discovered, multiple-testing fla
 backtest-result.yaml           full KPI metric panel + lead-lag profile + OOS degradation
 validation-report.yaml         every check verdict + binding constraint + relationship_type
 signal-card.md                 the human-readable signal card
+dashboard.html                 self-contained HTML dashboard with inline charts
 ```
+
+Open `dashboard.html` in any browser, no external assets, no JavaScript;
+the charts are matplotlib PNGs embedded as base64.
 
 ## What the demo proves
 
