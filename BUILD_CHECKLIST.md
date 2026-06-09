@@ -1627,16 +1627,20 @@ Add to root `CLAUDE.md`:
 - [ ] Generate `catalog.duckdb` in datasources repo. **Deferred** (datasources is MVP-scoped; CSV-native client is sufficient).
 - [ ] Generate `join_key_graph.json` in datasources repo. **Deferred** (graph built in-memory in `registry/join_graph.py`).
 
-### Phase 3, Core Research Workflow
+### Phase 3, Core Research Workflow ✅ COMPLETED 2026-06-09
 
-- [ ] Add hypothesis formulation skill.
-- [ ] Add dataset selection skill.
-- [ ] Add dataset contract skill.
-- [ ] Add cadence roll-up skill.
-- [ ] Add feature engineering skill.
-- [ ] Add time-series backtest skill.
-- [ ] Add statistical validation skill.
-- [ ] Add signal synthesis skill.
+- [x] Add hypothesis formulation skill (`skills/hypothesis-formulation/SKILL.md`).
+- [x] Add datasource-query skill (`skills/datasource-query/SKILL.md`).
+- [x] Add dataset selection skill (`skills/dataset-selection/SKILL.md`).
+- [x] Add dataset contract skill (`skills/dataset-contract/SKILL.md`).
+- [x] Add cadence roll-up skill (`skills/cadence-roll-up/SKILL.md`).
+- [x] Add feature engineering skill (`skills/feature-engineering/SKILL.md`).
+- [x] Add time-series backtest skill (`skills/time-series-backtest/SKILL.md`).
+- [x] Add statistical validation skill (`skills/statistical-validation/SKILL.md`).
+- [x] Add signal synthesis skill (`skills/signal-synthesis/SKILL.md`).
+- [x] Add 5 templates (idea, dataset-contract, signal, experiment, validation-report).
+- [x] Add 5 references (datasource-registry-interface, cadence-roll-up, feature-engineering-guardrails, backtesting-pitfalls, statistical-validation).
+- [ ] visual-display, dashboard-builder, causal-inference sub-skill content. **Deferred to Phase 7.**
 
 ### Phase 4, Python Engine
 
@@ -1760,6 +1764,9 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 - 2026-06-09: Bio-research deferred to post-v3 (section 20.3).
 - 2026-06-09: Phase 1 (Canonicalize) completed. Re-push to GitHub, then update external references (memory notes, `~/.claude/SKILLS.md`).
 - 2026-06-09: Phase 2 (Datasources Integration) completed. Registry client reads CSVs natively; DuckDB and join_key_graph deferred since datasources MVP forbids new generated outputs. All 19 unit tests green; live registry healthcheck returns 52 sources / 283 datasets / 1756 fields / 73 join keys.
+- 2026-06-09: Phase 3 (Core Research Workflow) completed. Nine sub-skill SKILL.mds written with full procedures, hard rules, output schemas, and worked examples (hypothesis-formulation, datasource-query, dataset-selection, dataset-contract, cadence-roll-up, feature-engineering, time-series-backtest, statistical-validation, signal-synthesis). Five canonical templates and five reference docs added.
+- 2026-06-09: Loop integration sequencing decided: finish Phase 3 (sub-skill content) first, then design the orchestrator. Loop scope locked to top-level orchestrator only for v3 (no per-sub-skill loops yet). To be implemented as Phase 3b.
+- 2026-06-09: Note for future. Datasources CLAUDE.md updated to "one entry per source" model with sub-datasets discovered via provider metadata endpoints rather than materialised in datasets.csv / fields.csv. The deep-quant registry client already handles missing CSVs gracefully (returns empty lists). When datasources regenerates under the new model, retest the client and adapt the synthesis logic if needed.
 
 ---
 
