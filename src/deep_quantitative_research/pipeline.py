@@ -26,9 +26,15 @@ from .research.signal_spec import SignalSpec, load_signal_spec
 from .timeseries.cadence import rollup
 from .timeseries.transformations import apply_transform
 from .validation import (
+    check_autocorrelation,
+    check_lag_sensitivity,
     check_missingness,
+    check_outlier_sensitivity,
     check_outliers,
     check_sample_size,
+    check_stationarity_adf,
+    check_stationarity_kpss,
+    classify_relationship,
 )
 from .validation.gate import assemble as assemble_report
 
@@ -154,12 +160,32 @@ def run_signal(
     # --- validation -------------------------------------------------------
     test_start, test_end = _period_bounds(spec.validation.test_period)
     test_target = target_rolled[(target_rolled.index >= test_start) & (target_rolled.index <= test_end)]
+    best_feature_series = grid_result.features[backtest.best_feature]
+    test_predictor = best_feature_series[
+        (best_feature_series.index >= test_start) & (best_feature_series.index <= test_end)
+    ]
 
     checks = [
         check_sample_size(len(test_target.dropna())),
         check_missingness(test_target),
         check_outliers(test_target),
+        check_stationarity_adf(test_target),
+        check_stationarity_kpss(test_target),
+        check_autocorrelation(test_target),
+        check_lag_sensitivity(backtest.lead_lag, best_lag=0),
+        check_outlier_sensitivity(
+            test_predictor,
+            test_target,
+            headline_corr=backtest.metrics_test.correlation,
+        ),
     ]
+
+    relationship_type, relationship_justification = classify_relationship(
+        backtest.lead_lag,
+        predictor=test_predictor,
+        target=test_target,
+        survives_oos=backtest.survives_oos,
+    )
 
     recommended = []
     if feature_search.confidence_cap != "high":
@@ -171,6 +197,11 @@ def run_signal(
         recommended.append(
             "Investigate why OOS correlation drops. Probe a regime split and check release_lag handling."
         )
+    for c in checks:
+        if c.verdict in {"warn", "fail"} and c.name in {"stationarity_adf", "spurious_trend"}:
+            recommended.append(
+                f"Address {c.name}: differencing or detrending may stabilise the result."
+            )
 
     validation = assemble_report(
         signal_id=spec.signal_id,
@@ -178,9 +209,15 @@ def run_signal(
         feature_search_cap=feature_search.confidence_cap,
         survives_oos=backtest.survives_oos,
         walk_forward=spec.validation.walk_forward,
+        relationship_type=relationship_type,
         registry_commit=registry_commit,
         recommended=recommended,
     )
+    # Attach the justification as a note in the recommended list when useful.
+    if relationship_type in {"spurious", "lagging"}:
+        validation.recommended_next_iterations.insert(
+            0, f"Relationship classified {relationship_type}: {relationship_justification}"
+        )
 
     # --- artefacts --------------------------------------------------------
     (run_dir / "run.yaml").write_text(

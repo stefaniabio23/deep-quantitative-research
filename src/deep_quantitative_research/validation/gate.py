@@ -46,6 +46,7 @@ def assemble(
     feature_search_cap: str,
     survives_oos: bool,
     walk_forward: bool,
+    relationship_type: str = "proxy",
     registry_commit: str | None = None,
     recommended: list[str] | None = None,
 ) -> ValidationReport:
@@ -68,7 +69,7 @@ def assemble(
         checks=checks,
         confidence_cap=cap_value,
         binding_constraint=cap_name if _TIER_RANK[cap_value] < _TIER_RANK["high"] else None,
-        relationship_type="proxy",
+        relationship_type=relationship_type,
         recommended_next_iterations=list(recommended or []),
         registry_commit=registry_commit,
     )
