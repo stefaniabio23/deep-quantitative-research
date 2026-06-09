@@ -1,0 +1,4 @@
+id,source_id,name,entry_level,entry_kind,route,data_endpoint,metadata_endpoint,time_index,time_grain,primary_keys,join_keys,field_schema,agent_use_cases
+eia-electricity-retail-sales,eia-open-data,EIA Electricity Retail Sales,dataset,panel,/electricity/retail-sales,/electricity/retail-sales/data,/electricity/retail-sales,period,monthly; quarterly; annual,EIA_ROUTE_PERIOD_STATE_SECTOR,DATE; US_STATE_CODE,catalog/eia-open-data/schemas/electricity-retail-sales.schema.yaml,electricity price time series; residential demand monitoring
+fred-retail-sales,fred,FRED Retail Sales,dataset,time-series,/series/RSXFS,/series/observations,/series,date,monthly; quarterly,FRED_SERIES_ID,DATE; ISO_3,,retail sales nowcast; recession indicator
+fred-unemployment,fred,FRED Unemployment Rate,dataset,time-series,/series/UNRATE,/series/observations,/series,date,monthly,FRED_SERIES_ID,DATE; ISO_3,,unemployment time series

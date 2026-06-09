@@ -1,0 +1,9 @@
+source_id,dataset_id,field_name,type,role,join_key,unit,required,description
+eia-open-data,eia-electricity-retail-sales,period,string,time_index,DATE,,yes,Observation period (YYYY-MM).
+eia-open-data,eia-electricity-retail-sales,stateid,string,dimension,US_STATE_CODE,,yes,US state two-letter code.
+eia-open-data,eia-electricity-retail-sales,sales,number,measure,,million_kwh,yes,Retail electricity sales in million kWh.
+eia-open-data,eia-electricity-retail-sales,price,number,measure,,cents_per_kwh,no,Average retail electricity price.
+fred,fred-retail-sales,date,string,time_index,DATE,,yes,Observation date.
+fred,fred-retail-sales,value,number,measure,,USD_millions,yes,Advance retail sales in millions of USD.
+fred,fred-unemployment,date,string,time_index,DATE,,yes,Observation date.
+fred,fred-unemployment,value,number,measure,,percent,yes,Civilian unemployment rate.

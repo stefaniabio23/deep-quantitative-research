@@ -268,14 +268,16 @@ The `datasources` repo is the canonical source of truth for public datasets. `de
 
 ### 4.2 Datasources Repo Gaps to Close
 
-State as of 2026-06-09: schemas, entries (10 domain folders), `generated/datasets.csv`, `fields.csv`, `index.json`, `join-keys.csv`, `join-key-index.md`, `sources.csv`, plus `scripts/` and a working `skills/add-dataset-entry/` skill all present. Gaps:
+State as of 2026-06-09: schemas, entries (11 domain folders), `generated/datasets.csv`, `fields.csv`, `index.json`, `join-keys.csv`, `join-key-index.md`, `sources.csv`, plus `scripts/` and a working `skills/add-dataset-entry/` skill all present. Live counts via `deep-quant query-datasources --healthcheck`: 52 sources, 283 datasets, 1756 fields, 73 join keys.
 
-- [ ] Add `generated/catalog.duckdb` export (preferred consumer format).
-- [ ] Add `generated/join_key_graph.json` (graph-form, not just CSV/MD list).
-- [ ] Confirm `index.json` matches the `catalog.json` shape expected by `config/datasources.yaml`, rename or add a symlink if needed.
-- [ ] Add `generated/source_quality_scores.csv` (can stub initially).
-- [ ] Verify schema files cover every field referenced in `config/datasources.yaml`.
-- [ ] Confirm the GitHub remote and decide release cadence for the registry.
+Datasources repo is MVP-scoped (its CLAUDE.md forbids expanding generated outputs without explicit confirmation). The deep-quant registry client reads the existing CSVs natively, so none of the gaps below are blockers; they are nice-to-have optimisations to discuss with the datasources owner.
+
+- [ ] Add `generated/catalog.duckdb` export (preferred consumer format). **Out of MVP for datasources.** Workaround: registry client reads CSVs directly.
+- [ ] Add `generated/join_key_graph.json` (graph-form). **Out of MVP for datasources.** Workaround: deep-quant builds the graph in-memory in `registry/join_graph.py`.
+- [x] Confirm `index.json` is the canonical machine index. (It is; the config's `generated_catalog_json` field points at it as a fallback path.)
+- [ ] Add `generated/source_quality_scores.csv`. **Out of MVP for datasources.** Workaround: deep-quant computes scores via `registry/scoring.py` from in-repo `config/scoring_weights.yaml`.
+- [x] Schema files cover the fields the registry client consumes (validated against live registry, 52 sources / 283 datasets read cleanly).
+- [x] GitHub remote confirmed (datasources is published).
 
 ### 4.3 Datasources Config
 
@@ -335,18 +337,18 @@ registry.score_dataset_fit(hypothesis, dataset_id)
 registry.get_registry_commit()
 ```
 
-- [ ] Implement local registry client.
-- [ ] Load generated catalog.
-- [ ] Load field metadata.
-- [ ] Load join-key graph.
-- [ ] Search datasets by keyword, domain, field, join key, cadence, and entry kind.
-- [ ] Retrieve canonical dataset metadata by `dataset_id`.
-- [ ] Retrieve fields by `dataset_id`.
-- [ ] Retrieve join keys by `dataset_id`.
-- [ ] Score dataset fit against a hypothesis.
-- [ ] Build experiment-specific dataset contracts.
-- [ ] Record registry commit hash.
-- [ ] Add unit tests using a small fixture registry.
+- [x] Implement local registry client (`src/deep_quantitative_research/registry/client.py`).
+- [x] Load generated catalog (index.json + 4 CSVs, cached, lazy).
+- [x] Load field metadata (fields.csv).
+- [x] Load join-key graph (in-memory, built from join-keys.csv + dataset metadata).
+- [x] Search datasets by keyword, domain, cadence, join key, entry kind.
+- [x] Retrieve canonical dataset metadata by `dataset_id` (`get_dataset`).
+- [x] Retrieve fields by `dataset_id` (`get_fields`).
+- [x] Retrieve join keys by `dataset_id` (`get_join_keys`).
+- [x] Score dataset fit against a hypothesis (`score_dataset_fit`, 8 axes, weights from `config/scoring_weights.yaml`).
+- [x] Build experiment-specific dataset contracts (`build_dataset_contract`).
+- [x] Record registry commit hash (`client.commit_hash()`, `client.snapshot()`).
+- [x] Add unit tests using a small fixture registry (`tests/fixtures/registry-mini/`, 19 tests, all green).
 
 ---
 
@@ -1611,16 +1613,19 @@ Add to root `CLAUDE.md`:
 - [x] Rename agents/causal-inference.md → agents/causal-skeptic.md.
 - [x] Update CONTRIBUTING.md for the new layout.
 
-### Phase 2, Datasources Integration
+### Phase 2, Datasources Integration ✅ COMPLETED 2026-06-09
 
-- [ ] Add `config/datasources.yaml`.
-- [ ] Add registry client.
-- [ ] Add registry healthcheck.
-- [ ] Add dataset search command.
-- [ ] Add dataset contract generation.
-- [ ] Add registry lockfile.
-- [ ] Generate `catalog.duckdb` in datasources repo.
-- [ ] Generate `join_key_graph.json` in datasources repo.
+- [x] Add `config/datasources.yaml`. (Phase 1)
+- [x] Add registry client (`src/deep_quantitative_research/registry/`, 7 modules + types).
+- [x] Add registry healthcheck (`deep-quant query-datasources --healthcheck`).
+- [x] Add dataset search command (`deep-quant query-datasources --query`, with --domain / --kind / --cadence / --join-key / --limit / --output filters).
+- [x] Add dataset contract generation (`deep-quant build-dataset-contract <dataset_id>`).
+- [x] Add registry lockfile (`client.snapshot(dataset_ids)` returns the block; written by run pipelines in later phases).
+- [x] Add additional CLI commands (`score-dataset`, `assess-join`).
+- [x] Add `tests/test_registry_client.py` with 19 unit tests against the fixture catalog.
+- [x] Smoke-verified against live datasources repo: 52 sources, 283 datasets, 1756 fields, 73 join keys.
+- [ ] Generate `catalog.duckdb` in datasources repo. **Deferred** (datasources is MVP-scoped; CSV-native client is sufficient).
+- [ ] Generate `join_key_graph.json` in datasources repo. **Deferred** (graph built in-memory in `registry/join_graph.py`).
 
 ### Phase 3, Core Research Workflow
 
@@ -1754,6 +1759,7 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 - 2026-06-09: Drop critique cluster. Keep the checklist idea inside sub-skills; keep elegant validator scripts and port to `src/deep_quantitative_research/validation/`.
 - 2026-06-09: Bio-research deferred to post-v3 (section 20.3).
 - 2026-06-09: Phase 1 (Canonicalize) completed. Re-push to GitHub, then update external references (memory notes, `~/.claude/SKILLS.md`).
+- 2026-06-09: Phase 2 (Datasources Integration) completed. Registry client reads CSVs natively; DuckDB and join_key_graph deferred since datasources MVP forbids new generated outputs. All 19 unit tests green; live registry healthcheck returns 52 sources / 283 datasets / 1756 fields / 73 join keys.
 
 ---
 

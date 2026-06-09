@@ -1,0 +1,4 @@
+id,name,domain,entry_kind,description,license,cost,auth_required,frequency,lag,join_keys,primary_keys
+arxiv,arXiv,academic,corpus,Open-access preprints.,CC0,free,none,daily,hours,ARXIV_ID; DOI,ARXIV_ID
+fred,FRED,finance-markets,time-series,FRED macro series.,Public-Domain,free,api-key-free,varies,30 to 90 days,DATE; ISO_3; US_STATE_CODE,FRED_SERIES_ID
+eia-open-data,EIA Open Data,government-open-data,panel,US EIA panels.,Public-Domain,free,api-key-free,varies,monthly,DATE; US_STATE_CODE; ISO_3,EIA_SERIES_ID
