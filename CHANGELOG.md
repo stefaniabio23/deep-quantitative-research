@@ -1,8 +1,55 @@
 # Changelog
 
-All notable changes to deep-quant-research are documented here.
+All notable changes to deep-quantitative-research (formerly deep-quant-research) are documented here.
 
 Format: [version], date, summary
+
+---
+
+## [3.0.0.dev0], 2026-06-09, IN PROGRESS
+
+Registry-aware architecture. Splits the project into two cooperating repos: `datasources` (canonical public-data registry, lives at `~/Projects/datasources/`) and `deep-quantitative-research` (signal research engine, this repo). The pre-v3 state is preserved at git tag `pre-v3-2026-06-09`.
+
+Migration plan and live progress: see `BUILD_CHECKLIST.md`. Architectural rationale: `ARCHITECTURE_LOG.md`.
+
+### Renamed
+
+- Repo: `deep-quant-research` → `deep-quantitative-research`
+- Skill folder: `skills/deep-quant-research/` → `skills/deep-quantitative-research/`
+- Command: `/deep-quant-research` → `/deep-quantitative-research`
+- Python package: (none) → `deep_quantitative_research`
+- CLI: (none) → `deep-quant`
+
+Deprecated names: `deep-research`, `deep-quant-research`. Do not introduce in new code.
+
+### Added (Phase 1, canonicalize)
+
+- Root `CLAUDE.md` with the 12 hard rules.
+- `pyproject.toml` with pinned deps and `deep-quant` CLI entry point.
+- `.env.example`, `.mcp.json` scaffold.
+- `config/{datasources,research_defaults,scoring_weights,validation_thresholds}.yaml`.
+- `src/deep_quantitative_research/` package skeleton with subpackages for `registry`, `research`, `timeseries`, `features`, `backtest`, `validation`, `reporting`, `dashboard`, `schemas`.
+- `experiments/{ideas,specs,runs,outputs}/` research ledger.
+- `docs/` directory for architecture and workflow documentation.
+- `tests/fixtures/` directory for the upcoming pytest suite.
+- Sub-skill folders under `skills/deep-quantitative-research/skills/` for the 12 pipeline stages.
+- `commands/`, `workflows/`, `templates/` folders inside the skill.
+
+### Removed
+
+- Mode-based routing (`quick`, `full`, `thesis-test`, `data-first`, `literature`, `thorough`). Replaced by per-stage commands.
+- Critique cluster (`methods-critic`, `data-critic`, `logic-critic`) and `shared/critique-cluster.md`. Checklist-style validation moves into the relevant sub-skills (`statistical-validation`, `dataset-contract`, `feature-engineering`).
+- Agents: `originality-scout`, `knowledge-base-builder`, `question-sharpener` (folded into `hypothesis-formulation` sub-skill).
+- `shared/pipeline-monitor.md`, `shared/handoff-schemas.md` (replaced by formal YAML schemas under `src/deep_quantitative_research/schemas/`).
+- `references/mode-guide.md` (modes dropped).
+
+### Renamed
+
+- `agents/causal-inference.md` → `agents/causal-skeptic.md` (the conceptual name `causal-inference` is now reserved for the sub-skill).
+
+### Still to do in v3
+
+Phases 2 to 7 of `BUILD_CHECKLIST.md`: datasources integration (registry client), sub-skill content fills, Python module implementations, tests, templates, dashboard, and the first end-to-end demo.
 
 ---
 

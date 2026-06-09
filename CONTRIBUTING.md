@@ -1,109 +1,79 @@
 # Contributing
 
-Contributions are welcome. This document covers how to add new agents, scripts, and domain context skills.
+Contributions welcome. This document covers how to add datasets, agents, sub-skills, Python modules, and domain context skills under the v3 architecture.
 
----
+## Two repos, two responsibilities
+
+- **`~/Projects/datasources/`** owns dataset metadata, schemas, fields, join keys, cadence, release lag, point-in-time safety.
+- **`~/Projects/deep-quant-research/`** (this repo) owns hypotheses, signal specs, feature grids, backtests, validation, signal cards, dashboards.
+
+A dataset entry never lives in this repo. A signal never lives in `datasources`. If you find one in the wrong place, that is a bug to fix.
 
 ## What can be contributed
 
-**New agents**, add to `skills/deep-quant-research/agents/`. Follow the template: Role, Phase, Input/Output, Procedure. Register the agent in the relevant mode block of `skills/deep-quant-research/SKILL.md`.
+**New datasets.** Add an entry to `~/Projects/datasources/entries/<domain>/<dataset-id>.yaml` and regenerate the catalog. This repo will pick it up via the registry client.
 
-**New scripts**, add to `skills/deep-quant-research/scripts/`. Must accept `--output` as YAML path, print progress to stdout, handle errors gracefully.
+**New sub-skill.** Add a folder under `skills/deep-quantitative-research/skills/<skill-name>/` with a `SKILL.md` and a `references/` directory. Register the skill in the top-level `skills/deep-quantitative-research/SKILL.md` sub-skill table.
 
-**New data sources**, extend `skills/deep-quant-research/scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
+**New agent.** Add to `skills/deep-quantitative-research/agents/<agent-name>.md`. The canonical set is the 8 listed in the top-level SKILL.md; new agents should orchestrate sub-skills, not duplicate them.
 
-**Domain context skills**, skills that add specialist knowledge to a specific research area. Place in their own folder at the repo root alongside `skills/`. See `Domain Context Skills` below.
+**New Python module.** Add under the appropriate subpackage in `src/deep_quantitative_research/`. Every module ships with a unit test in `tests/`.
 
-**Shared protocols**, additions to `skills/deep-quant-research/shared/` for new statistical methods, interpretation rubrics, or style conventions.
+**New CLI subcommand.** Wire into `src/deep_quantitative_research/cli.py` (Phase 4), then add a thin wrapper in `scripts/` if a standalone script is useful.
 
-**New critique checklist**, add to `skills/deep-quant-research/shared/critique-checklists/` and register the trigger point in `skills/deep-quant-research/shared/critique-cluster.md`.
+**New template.** Add to `skills/deep-quantitative-research/templates/`. Reference it from the sub-skill that produces the artefact.
 
----
+**New reference doc.** Add to `skills/deep-quantitative-research/references/` (for prose) or `docs/` (for architecture-level docs).
+
+**Domain context skill.** Specialist knowledge for a research subfield (e.g. `oncology-genomics-context`). Place in its own folder at the repo root alongside `skills/`. The orchestrator detects loaded context skills and passes them to `research-architect`.
 
 ## Skill file requirements
 
-All files in `skills/` must comply with the Claude Skills specification:
-- `SKILL.md` named exactly (case-sensitive)
-- YAML frontmatter with `name` (kebab-case) and `description` (includes trigger phrases)
-- No XML angle brackets in frontmatter
-- No `README.md` inside skill folders
+Every `SKILL.md` must comply with the Claude Skills spec:
 
----
+- File named exactly `SKILL.md` (case-sensitive).
+- YAML frontmatter with `name` (kebab-case) and `description` (includes trigger phrases).
+- No XML angle brackets in frontmatter.
+- No `README.md` inside skill folders. (`README.md` at repo root is fine.)
 
-## Domain Context Skills
+## Python code standards
 
-A domain context skill adds specialist knowledge for a specific research subfield. Examples:
-- `oncology-genomics-context` — pathway biology, biomarker interpretation, clinical trial design conventions
-- `eu-healthcare-equity-context` — European pharma pricing, EMA vs FDA pathway differences, reimbursement
-- `macro-quant-context` — central bank reaction functions, regime identification, macro factor construction
-
-Structure:
-```
-[domain-name]-context/
-├── SKILL.md          # Description triggers on the domain name
-└── references/
-    └── [domain-specific knowledge files]
-```
-
-The `deep-quant-research` orchestrator detects loaded context skills and passes them to `question-sharpener` and `research-architect`.
-
----
-
-## Agent template
-
-```markdown
-# [Agent Name] Agent
-
-**Role:** One sentence.
-
-**Phase:** N — Phase name
-**Input:** What it reads
-**Output:** What it produces (file path + schema reference)
-
----
-
-## Procedure
-
-### Step 1: [Action]
-[Instructions]
-
-### Step 2: [Action]
-[Instructions]
-
----
-
-## [Domain-specific sections if needed]
-```
-
----
-
-## Code standards
-
-Python scripts:
-- Type hints on function signatures
-- `argparse` CLI with `--output` as YAML path
-- Print progress to stdout (not stderr)
-- Graceful error messages with actionable fix instructions
-- No hardcoded paths; all paths via arguments
-- Compatible with Python 3.10+
-
----
+- Type hints on function signatures.
+- `click` CLI; fail fast on missing required args with an actionable message.
+- Print progress to stdout, errors to stderr.
+- No hardcoded paths; resolve via `config/` or CLI args.
+- Compatible with Python 3.10+.
+- Pinned deps in `pyproject.toml`; no loose dependency drift.
+- Validate every output against the corresponding schema in `src/deep_quantitative_research/schemas/`.
 
 ## Testing
 
-Before submitting:
-1. Verify `skills/deep-quant-research/SKILL.md` frontmatter passes YAML lint
-2. Run `python skills/deep-quant-research/scripts/[script].py --help` to confirm CLI works
-3. Run a minimal end-to-end test with the trigger phrase documented in the PR
+Before opening a PR:
 
----
+```bash
+python -m py_compile src/deep_quantitative_research/**/*.py
+pytest -q
+deep-quant --help
+deep-quant query-datasources --healthcheck
+```
+
+If your change adds or modifies a sub-skill, run the matching example in `examples/` end-to-end and confirm `expected-output/` still matches.
 
 ## Pull request format
 
 Title: `[type]: brief description`
-Types: `agent`, `script`, `protocol`, `context-skill`, `fix`, `docs`
+
+Types: `agent`, `sub-skill`, `module`, `template`, `reference`, `docs`, `fix`, `chore`.
 
 Body:
-- What was added/changed
-- Test performed
-- Any known limitations
+
+- What was added or changed.
+- Which sub-skill or module it touches.
+- Tests performed.
+- Any known limitations.
+- For new agents: which sub-skills it orchestrates.
+- For new datasets: confirm the entry lives in `~/Projects/datasources/`, not here.
+
+## Deprecated names
+
+`deep-research` and `deep-quant-research` are deprecated. Use `deep-quantitative-research` everywhere in new code.

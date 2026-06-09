@@ -1,0 +1,23 @@
+# Thresholds applied by the statistical-validation sub-skill and src/deep_quantitative_research/validation/.
+# Confidence is capped to the lowest tier whose checks pass.
+
+confidence_caps:
+  low:
+    min_sample_size: 30
+  medium:
+    min_sample_size: 60
+    requires_oos_survival: true
+    requires_walk_forward: true
+  high:
+    min_sample_size: 120
+    requires_oos_survival: true
+    requires_walk_forward: true
+    requires_regime_split: true
+    requires_multiple_testing_correction: true
+    max_features_searched: 50
+
+flags:
+  missingness_warn_pct: 5.0
+  missingness_fail_pct: 25.0
+  outlier_z_threshold: 4.0
+  lag_sensitivity_max_drop_pct: 30.0

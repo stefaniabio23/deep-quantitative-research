@@ -1,0 +1,17 @@
+# Weights for dataset_fit_score in src/deep_quantitative_research/registry/scoring.py.
+# Each axis is 0 to 10. Total score is a weighted mean. Adjust per domain by overriding here.
+
+weights:
+  economic_proximity: 1.5
+  coverage: 1.0
+  cadence_fit: 1.2
+  release_lag_clarity: 1.0
+  point_in_time_safety: 1.3
+  survivorship_bias_risk: 1.1
+  api_scriptability: 0.8
+  cost_access_practicality: 0.6
+
+thresholds:
+  reject_below: 4.0
+  flag_review_below: 6.0
+  high_fit_above: 8.0

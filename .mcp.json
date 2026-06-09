@@ -1,0 +1,4 @@
+{
+  "comment": "MCP server registrations for deep-quantitative-research. Populated in Phase 7+ per BUILD_CHECKLIST.md section 14. Keep this file as the single source of truth for repo-scoped MCPs.",
+  "mcpServers": {}
+}

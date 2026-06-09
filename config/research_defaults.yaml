@@ -1,0 +1,27 @@
+# Default knobs for hypothesis formulation, feature engineering, and backtest runs.
+# Sub-skills consume these via deep_quantitative_research.config.
+
+feature_grid:
+  max_features: 40
+  max_lags: 3
+  multiple_testing_correction: true
+  correction_method: benjamini_hochberg
+
+validation:
+  train_test_split: 0.7
+  walk_forward: true
+  regime_split: true
+  min_oos_samples: 24
+
+cadence:
+  preferred_target_cadences: [monthly, quarterly]
+  partial_period_policy: drop
+  missing_period_policy: flag
+
+backtest:
+  kpi_metrics: [rolling_correlation, rank_correlation, directional_accuracy, mae, mape, rmse, hit_rate, lead_lag_profile, oos_degradation]
+  trading_metrics: [cagr, sharpe, sortino, max_drawdown, hit_rate, turnover, transaction_costs, benchmark_alpha, benchmark_beta]
+
+reporting:
+  signal_card_template: skills/deep-quantitative-research/templates/signal-template.md
+  dashboard_template: skills/deep-quantitative-research/templates/dashboard-template.md

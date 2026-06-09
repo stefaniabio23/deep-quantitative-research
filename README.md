@@ -1,178 +1,152 @@
-# deep-quant-research
+# deep-quantitative-research
 
-A structured, iterative quantitative research skill for Claude Code. Runs an 11-agent pipeline plus a three-critic adversarial cluster across finance, biotech, and quant domains, with a confidence-scored loop that refines hypotheses until the evidence is strong enough to report or returns an honest null.
+A registry-aware quantitative research engine. Turns a vague research idea into a falsifiable, reproducible, dashboard-ready signal artifact.
 
----
+The unit of work is a **signal**, not a model. A signal carries its hypothesis, datasets, contracts, features, backtest, validation, causal read, confidence, caveats, and next iteration in one folder.
+
+```text
+Idea → Hypothesis → Dataset Selection → Dataset Contract → Cadence Alignment
+     → Feature Grid → Backtest → Statistical Validation → Signal Card → Dashboard
+```
 
 ## What it does
 
-Give it a research question. It formulates a testable hypothesis, finds and validates data, runs statistical analysis, sends the result through three blind adversarial critics (methods, data, logic), reconciles their verdicts, and produces a research report. Every phase carries explicit confidence scoring and falsification criteria.
+Give it a research question. The pipeline formulates a testable hypothesis, queries the sibling `datasources` registry, scores candidate datasets by hypothesis fit, materialises an experiment-specific dataset contract, aligns cadences safely, generates a controlled feature grid, runs walk-forward backtests in either KPI-prediction or tradable-signal mode, validates against leakage and overfitting, and emits a signal card plus a dashboard.
 
-If the evidence is weak, it surfaces why and refines the hypothesis. If after three iterations there is still no reliable signal, it reports that as a null result.
+If the evidence is weak it caps confidence and returns a documented null. A null result with the right caveats is a finding.
 
-**Research types supported:**
-- **Finance:** KPI-to-price analysis, factor decomposition, backtesting, lag analysis, earnings quality, event studies
-- **Biotech:** Clinical trial signal extraction, drug pipeline analysis, genomic data interpretation, literature synthesis
-- **Quant:** Factor models, macro relationships, dependence structures (including distance correlation), regime analysis
+**Domains:**
 
----
+- **Finance.** KPI-to-price analysis, factor decomposition, backtesting, lag analysis, event studies.
+- **Biotech.** Clinical trial signal extraction, drug pipeline analysis, openFDA / OpenTargets feeds.
+- **Macro / quant.** Factor models, macro relationships, dependence structures, regime analysis.
 
-## The research loop
+## Architecture
 
-```
-Question
-  → Hypothesis formulation (testable, with falsification criteria)
-  → Originality check + knowledge-base entry
-  → Study design (method choice, evidence threshold)
-  → Data discovery + immediate quality audit (4-bias check)
-  → Analysis: stats, time-series, optional backtest + causal
-  → Critique cluster (methods + data + logic critics, parallel, blind)
-  → Findings reconciliation, interpretation, scoring (1-10)
-       ↓ FAIL: revise affected phase, max 3 loops
-       ↓ score < 6: refine hypothesis, max 3 iterations
-       ↓ score ≥ 6: pass to report
-  → Final report with writing quality check
+Two repos, clean separation:
+
+```text
+~/Projects/datasources/                 canonical public-data registry
+~/Projects/deep-quant-research/         research workflow engine (this repo)
 ```
 
----
+The `datasources` repo owns dataset entries, schemas, fields, join keys, cadence, release lag, point-in-time safety. This repo owns hypotheses, dataset selection reasoning, signal specs, feature grids, backtests, validation, signal cards, and dashboards.
+
+Layers:
+
+```text
+Layer 1  Registry         What data exists?         datasources
+Layer 2  Semantics        What does it mean?        shared
+Layer 3  Experiment       What are we testing?      deep-quant
+Layer 4  Research output  What do we believe?       deep-quant
+```
+
+Compact form: `Data Registry → Signal Factory → Research Ledger → Dashboard`.
 
 ## Install
 
 ```bash
-# 1. Copy skill to Claude Code skills directory
-cp -r skills/deep-quant-research ~/.claude/commands/
-
-# 2. Install Python dependencies
-pip install -r requirements.txt
-
-# 3. Optional: FRED API key for macro data
-export FRED_API_KEY=your_key_here
+git clone https://github.com/stephbeccag/deep-quantitative-research.git
+cd deep-quantitative-research
+pip install -e ".[dev]"
+cp .env.example .env             # add FRED_API_KEY etc.
 ```
 
-See [QUICKSTART.md](QUICKSTART.md) for the 5-minute guide.
-
----
+The sibling registry is expected at `../datasources/`. Override with `DATASOURCES_PATH` in `.env` if needed.
 
 ## Usage
 
+Per-stage commands (recommended):
+
+```bash
+deep-quant formulate-hypothesis \
+  --idea "Search interest predicts UK retail sales" \
+  --out experiments/ideas/uk-retail-demand.yaml
+
+deep-quant find-datasets \
+  --hypothesis experiments/ideas/uk-retail-demand.yaml \
+  --out experiments/specs/dataset-candidates.yaml
+
+deep-quant design-signal \
+  --target ons-retail-sales-index \
+  --predictors google-trends-retail-searches,boe-consumer-credit \
+  --out experiments/specs/uk-retail-search-demand-signal.yaml
+
+deep-quant run-signal \
+  --spec experiments/specs/uk-retail-search-demand-signal.yaml
+
+deep-quant render-dashboard \
+  --run experiments/runs/2026-06-09-uk-retail-search-demand/
 ```
-/deep-quant-research "<your question>" [--mode <mode>]
+
+End-to-end Claude skill:
+
+```text
+/deep-quantitative-research "Does Google Trends interest in GLP-1 drugs predict next-quarter Novo obesity revenue?"
 ```
-
-Modes:
-
-| Mode | Use case |
-|------|----------|
-| `full` (default) | Standard research question, full pipeline, critique cluster on |
-| `quick` | Fast scoping, sanity check, no backtest or causal |
-| `thesis-test` | Stress-test an investment or research thesis, all critics required |
-| `data-first` | You have data, find the story |
-| `literature` | Prior work synthesis, gap analysis, no analysis-engine |
-| `thorough` | Publication-quality, all critics required, up to 2 revision rounds |
-
-
----
 
 ## Structure
 
-The installable skill is self-contained inside `skills/deep-quant-research/`. Copy that one folder to `~/.claude/commands/` to install.
-
+```text
+deep-quantitative-research/
+├── README.md, QUICKSTART.md, CHANGELOG.md, CLAUDE.md
+├── ARCHITECTURE_LOG.md, BUILD_CHECKLIST.md
+├── pyproject.toml, requirements.txt, .env.example, .mcp.json
+│
+├── config/
+│   ├── datasources.yaml           bridge to ../datasources
+│   ├── research_defaults.yaml     default knobs for feature grids, validation, etc.
+│   ├── scoring_weights.yaml       dataset_fit_score weights
+│   └── validation_thresholds.yaml confidence-cap thresholds
+│
+├── skills/
+│   └── deep-quantitative-research/
+│       ├── SKILL.md
+│       ├── commands/              one slash command per pipeline stage
+│       ├── workflows/             end-to-end and domain-specific recipes
+│       ├── skills/                12 sub-skills, one per pipeline stage
+│       ├── agents/                8 canonical agents that orchestrate sub-skills
+│       ├── templates/             signal-card, dataset-contract, dashboard, etc.
+│       ├── references/            registry interface, guardrails, Tufte, etc.
+│       └── examples/
+│
+├── src/deep_quantitative_research/
+│   ├── registry/                  bridge client to the datasources repo
+│   ├── research/                  hypothesis, dataset selection, signal spec
+│   ├── timeseries/                cadence, alignment, release lags, transforms
+│   ├── features/                  grid, transforms, selection, overfitting
+│   ├── backtest/                  KPI and trading paths, walk-forward, metrics
+│   ├── validation/                data quality, statistical tests, robustness
+│   ├── reporting/                 signal card, charts, markdown
+│   ├── dashboard/                 HTML emitter, multi-signal aggregator
+│   └── schemas/                   YAML schemas for every artefact
+│
+├── scripts/                       thin CLI wrappers around the Python package
+├── experiments/                   research ledger: ideas/ specs/ runs/ outputs/
+├── examples/                      runnable demos with expected outputs
+├── docs/                          architecture, workflow, validation, testing
+└── tests/                         pytest suite with fixtures
 ```
-skills/deep-quant-research/    ← the installable skill
-  SKILL.md                     ← orchestrator: modes, pipeline, routing
-  agents/                      ← 10 core agents + findings-evaluator
-    question-sharpener.md
-    originality-scout.md
-    knowledge-base-builder.md
-    research-architect.md
-    data-scout-quality.md
-    analysis-engine.md
-    backtest-engine.md
-    causal-inference.md
-    findings-evaluator.md
-    report-compiler.md
-  shared/                      ← protocols referenced by all agents
-    critique-cluster.md        ← blind critique protocol (methods + data + logic critics)
-    pipeline-monitor.md        ← session state, abort conditions, revision tracking
-    statistical-standards.md   ← evidence hierarchy, test requirements, confidence rubric
-    data-quality-protocol.md   ← four-bias audit: look-ahead, survivorship, snooping, selection
-    interpretation-rubric.md   ← domain benchmarks for finance, biotech, quant
-    output-style-guide.md      ← writing standards and anti-AI checklist
-    chart-style-guide.md       ← chart conventions and diagnostic charts
-    handoff-schemas.md         ← data contracts between agents
-  scripts/                     ← Python utilities
-    fetch_data.py              ← yfinance, FRED, Fama-French, ClinicalTrials.gov, PubMed, OpenTargets, openFDA
-    statistical_analysis.py    ← correlation, regression (Newey-West), PCA, event study, Granger
-    timeseries.py              ← ADF/KPSS, lag analysis, STL decomposition, distance correlation, cointegration
-    backtest.py                ← walk-forward backtesting with transaction costs and drawdown
-    data_quality.py            ← outlier detection, missing data audit
-    chart_theme.py             ← shared matplotlib theme
-    validate_output.py         ← pipeline-monitor validation
-  references/                  ← background docs
-    data-sources.md            ← all APIs and their limitations
-    mode-guide.md              ← when to use each mode
-    troubleshooting.md         ← common failure modes
-```
 
-The critique cluster's three critics (methods, data, logic) are defined by their checklists in `shared/critique-checklists/` rather than as separate agent files; the cluster protocol in `shared/critique-cluster.md` orchestrates them. That is why the agent table below shows 10 named agents plus the cluster.
+## Agents
 
----
+| Agent | Role |
+|---|---|
+| `research-architect` | Designs the study, sets evidence threshold |
+| `dataset-scout` | Searches the registry for candidate datasets |
+| `data-quality-auditor` | Runs four-bias audit on every dataset |
+| `feature-engineer` | Builds controlled feature grids |
+| `backtest-engine` | Walk-forward KPI / tradable backtests |
+| `causal-skeptic` | Classifies relationship type, blocks unjustified causal language |
+| `findings-evaluator` | Reconciles results, scores confidence, gates the report |
+| `dashboard-designer` | Composes multi-signal dashboard with current read |
 
-## The agent team
+## Status
 
-| # | Agent | Role |
-|---|-------|------|
-| 1 | `question-sharpener` | Converts vague questions into testable hypotheses with explicit falsification criteria |
-| 2 | `originality-scout` | Maps prior work, scores novelty, identifies the differentiation angle |
-| 3 | `knowledge-base-builder` | Builds a durable topic entry: consensus, disputes, datasets, open questions |
-| 4 | `research-architect` | Designs the study: method choice, evidence threshold, validation approach |
-| 5 | `data-scout-quality` | Fetches data from 8+ free APIs and immediately runs the four-bias audit |
-| 6 | `analysis-engine` | Correlations (Pearson, Spearman, distance), regression, PCA, event study, time-series |
-| 7 | `backtest-engine` | Walk-forward backtesting with transaction costs, drawdown, benchmark comparison |
-| 8 | `causal-inference` | Granger causality, difference-in-differences, confound detection |
-| 9 | **critique cluster** | `methods-critic` + `data-critic` + `logic-critic`. Parallel, blind, adversarial. |
-| 10 | `findings-evaluator` | Reconciles critic verdicts; routes to revision, proceed, or human review |
-| 11 | `report-compiler` | Final output with style guide and anti-AI writing check |
+**v3.0.0.dev0.** Migration from v2.0.0 in progress. See `BUILD_CHECKLIST.md` for the live plan and `ARCHITECTURE_LOG.md` for the OG-vs-target gap analysis. Pre-v3 state preserved at git tag `pre-v3-2026-06-09`.
 
-The critique cluster runs at three points in the pipeline (after analysis, after synthesis, after the report draft). Each critic sees only the work it is reviewing plus its checklist, never the other critics' verdicts or the producing agent's reasoning. That isolation is the point: it forces independent challenges from three angles and surfaces failure modes that a single reviewer would miss.
-
----
-
-## Data sources (all free)
-
-| Source | Domain | Access |
-|--------|--------|--------|
-| yfinance | Equity prices, global | `scripts/fetch_data.py` |
-| FRED | Macro (800k+ series) | `scripts/fetch_data.py` (free API key) |
-| Fama-French | Factor returns 1926+ | `scripts/fetch_data.py` |
-| ClinicalTrials.gov | Clinical trials registry | `scripts/fetch_data.py` |
-| PubMed / NCBI | Biomedical literature | `scripts/fetch_data.py` |
-| OpenTargets | Gene-disease associations | `scripts/fetch_data.py` |
-| openFDA | Drug approvals, adverse events | `scripts/fetch_data.py` |
-| WebSearch + WebFetch | General web, filings, reports | Built-in Claude tools |
-
----
-
-## Extending the system
-
-**Add a new agent:** Create a file in `skills/deep-quant-research/agents/` following the template in [CONTRIBUTING.md](CONTRIBUTING.md). Reference it from the relevant mode block in `SKILL.md`.
-
-**Add a critic:** Add a checklist to `skills/deep-quant-research/shared/critique-checklists/` and register the trigger point in `shared/critique-cluster.md`. New critics inherit the blind-review protocol automatically.
-
-**Add domain context:** Create a domain context skill (e.g., `oncology-genomics-context/`) in the repo root. The orchestrator detects loaded context skills and incorporates them into the research design phase.
-
-**Add a data source:** Extend `skills/deep-quant-research/scripts/fetch_data.py` and document in `skills/deep-quant-research/references/data-sources.md`.
-
----
-
-## Requirements
-
-- Python 3.10+
-- Claude Code with `Bash(python:*)`, `WebSearch`, `WebFetch` permissions
-- See [requirements.txt](requirements.txt) for Python packages
-
----
+Deprecated names that may appear in old branches or external links: `deep-research`, `deep-quant-research`.
 
 ## License
 
-MIT, see [LICENSE](LICENSE)
+MIT, see `LICENSE`.

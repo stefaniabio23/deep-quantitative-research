@@ -1,0 +1,17 @@
+# Bridge to the sibling datasources repo. See BUILD_CHECKLIST.md section 4.3.
+
+datasources_repo:
+  path: "../datasources"
+  generated_catalog: "../datasources/generated/catalog.duckdb"
+  generated_catalog_json: "../datasources/generated/catalog.json"
+  generated_fields: "../datasources/generated/fields.csv"
+  join_key_graph: "../datasources/generated/join_key_graph.json"
+
+registry_mode: local
+
+versioning:
+  require_commit_hash: true
+  lock_registry_snapshot: true
+
+dataset_id_field: dataset_id
+source_id_field: source_id

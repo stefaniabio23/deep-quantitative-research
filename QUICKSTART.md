@@ -1,84 +1,95 @@
 # Quick Start
 
-Get running in under 5 minutes.
-
----
+Get a signal from idea to dashboard in five steps.
 
 ## Install
 
-**Step 1:** Clone or download this repo
+```bash
+git clone https://github.com/stephbeccag/deep-quantitative-research.git
+cd deep-quantitative-research
+pip install -e ".[dev]"
+cp .env.example .env             # add FRED_API_KEY etc.
+```
+
+The sibling registry must be at `../datasources/`. Override via `DATASOURCES_PATH` in `.env`.
+
+Healthcheck:
 
 ```bash
-git clone https://github.com/[your-username]/deep-quant-research.git
+deep-quant query-datasources --healthcheck
 ```
 
-**Step 2:** Copy the skill to your Claude Code skills directory
+## The five-step worked example
+
+We want to know whether Google Trends search interest predicts UK retail sales.
+
+### 1. Formulate the hypothesis
 
 ```bash
-cp -r deep-quant-research/skills/deep-quant-research ~/.claude/commands/
+deep-quant formulate-hypothesis \
+  --idea "Search interest predicts UK retail sales" \
+  --out experiments/ideas/uk-retail-demand.yaml
 ```
 
-**Step 3:** Install Python dependencies
+This produces a YAML with the testable claim, target variable, candidate predictors, expected direction, expected lag, economic mechanism, and falsification criteria.
+
+### 2. Find candidate datasets
 
 ```bash
-pip install -r deep-quant-research/requirements.txt
+deep-quant find-datasets \
+  --hypothesis experiments/ideas/uk-retail-demand.yaml \
+  --out experiments/specs/dataset-candidates.yaml
 ```
 
-**Step 4:** (Optional) Set FRED API key for macroeconomic data
+Queries the registry for target, predictor, and context datasets. Scores each on hypothesis fit, cadence, point-in-time safety, and access.
+
+### 3. Design the signal
 
 ```bash
-export FRED_API_KEY=your_key_here
-# Get a free key at: fred.stlouisfed.org/docs/api/api_key.html
+deep-quant design-signal \
+  --target ons-retail-sales-index \
+  --predictors google-trends-retail-searches,boe-consumer-credit \
+  --out experiments/specs/uk-retail-search-demand-signal.yaml
 ```
 
----
+Writes a `SignalSpec`: target field, predictor fields, join keys, cadence policy, feature-grid config, validation plan, expected outputs.
 
-## Run your first research
+### 4. Run the signal
 
-Open Claude Code in the directory where you want research output saved, then:
-
-```
-Research whether momentum is stronger during low-volatility regimes in European equities
-```
-
-Claude will:
-1. Sharpen the hypothesis and ask you to confirm
-2. Fetch factor and price data
-3. Run the analysis
-4. Score confidence and refine if needed
-5. Produce a report
-
----
-
-## Mode examples
-
-```
-# Full research loop
-Research [your question]
-
-# Test an existing hypothesis
-/thesis-test: [state your hypothesis clearly]
-
-# Quick brief (30 min target)
-/quick: what drives EBITDA multiple expansion in European pharma
-
-# You have a dataset
-/data-first: [describe your dataset]
-
-# Literature synthesis
-/literature: KRAS G12C inhibitors — what does the clinical evidence show
+```bash
+deep-quant run-signal \
+  --spec experiments/specs/uk-retail-search-demand-signal.yaml
 ```
 
----
+Materialises dataset contracts, rolls cadence safely, builds the controlled feature grid, runs the KPI backtest, applies the statistical-validation gate. All artefacts land in `experiments/runs/<run-id>/`.
+
+### 5. Render the dashboard
+
+```bash
+deep-quant render-dashboard \
+  --run experiments/runs/2026-06-09-uk-retail-search-demand/
+```
+
+Opens `dashboard.html` showing the signal-vs-target chart, rolling correlation, feature stability, confidence cap, data quality warnings, and next iteration.
+
+## Run via Claude skill
+
+The same pipeline end-to-end:
+
+```text
+/deep-quantitative-research "Does Google Trends interest in GLP-1 drugs predict next-quarter Novo obesity revenue?"
+```
+
+Claude walks each stage, asks for confirmation at the hypothesis and dataset gates, and writes the same artefact bundle.
 
 ## Troubleshooting
 
-**Missing packages:** `pip install -r requirements.txt`
+**Registry not found.** Confirm `../datasources/` exists and `DATASOURCES_PATH` matches. `deep-quant query-datasources --healthcheck` will print the resolved path and commit hash.
 
-**yfinance errors:** Some tickers require the exchange suffix (e.g., `AZN.L` for AstraZeneca on LSE)
+**FRED data missing.** Set `FRED_API_KEY` in `.env`. Free key at https://fred.stlouisfed.org/docs/api/api_key.html.
 
-**ClinicalTrials.gov slow:** The API is public and occasionally slow. Retry after a minute.
+**yfinance ticker error.** Some tickers need the exchange suffix (`AZN.L` for AstraZeneca on LSE).
 
-**FRED data not fetching:** Set `FRED_API_KEY` or the script will attempt a direct CSV download as fallback.
+**ClinicalTrials.gov slow.** Public API; retry after a minute or rely on the cache.
 
-**Confidence score stuck:** After 3 iterations, the system reports a null result. This is informative — see the report for what was ruled out and what additional data would resolve it.
+**Confidence stuck at low.** Read `validation-report.md` in the run directory. It names exactly which check capped the confidence and what would lift it.
