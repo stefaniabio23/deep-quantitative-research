@@ -1672,14 +1672,14 @@ Add to root `CLAUDE.md`:
 - [ ] Add demo test.
 - [ ] Add CI.
 
-### Phase 6, Outputs
+### Phase 6, Outputs ✅ DEMO COMPLETED 2026-06-09
 
-- [ ] Add signal template.
-- [ ] Add dataset contract template.
-- [ ] Add experiment template.
-- [ ] Add validation template.
-- [ ] Add dashboard template.
-- [ ] Build first end-to-end demo.
+- [x] Add signal template. (Phase 3)
+- [x] Add dataset contract template. (Phase 3)
+- [x] Add experiment template. (Phase 3)
+- [x] Add validation template. (Phase 3)
+- [ ] Add dashboard template. **Phase 7.**
+- [x] Build first end-to-end demo: `examples/biotech-pos/` with `run.sh`, deterministic synthetic-data generator, signal-spec referencing real registry dataset_ids (`aact` + `yfinance`), and a committed `expected-output/` reference bundle.
 
 ### Phase 7, Advanced Research Layer
 
@@ -1781,6 +1781,7 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 - 2026-06-09: Loops dropped. The earlier Phase 3b plan to add a Claude Agent SDK orchestrator is cancelled at user request. v3 has no orchestrator loop. The pipeline is driven by per-stage commands and the sub-skill specs; refinement is a manual rerun, not an automated control loop.
 - 2026-06-09: Phase 4 (vertical slice) completed. SignalSpec → cadence rollup → controlled feature grid → KPI backtest → validation gate → signal card. 6 JSON Schemas, 12 Python modules (timeseries, features, backtest, validation, reporting, pipeline, schemas, research), `deep-quant run-signal` CLI command, 56 new tests (75 total). Trading backtest, stationarity tests, causal checks, and the find-datasets / formulate-hypothesis / design-signal / validate-signal / render-signal-card CLI subcommands deferred to Phase 4b.
 - 2026-06-09: Phase 4b (validation hardening) completed. Added stationarity (ADF + KPSS), autocorrelation (Ljung-Box), robustness (lag + outlier sensitivity), and causal classification (with optional Granger). Wired into the pipeline so every validation-report.yaml carries them. 14 new tests, 89 total green. Trading backtest and the remaining CLI subcommands stay deferred.
+- 2026-06-09: Phase 6 (first end-to-end demo) completed. `examples/biotech-pos/` ships `run.sh`, deterministic seeded data generator, a SignalSpec referencing real registry dataset_ids (`aact` + `yfinance`), and a committed `expected-output/` bundle. The demo planted a one-quarter Phase 3 readout → biotech-subindex lead-lag relationship; the pipeline recovers it (test r=0.33, survives OOS) and caps confidence at medium (binding constraint: sample_size). Also fixed two related polish bugs in this commit: MAPE now returns NaN for non-positive target series (instead of producing nonsense for returns data), and `classify_relationship` now reads the embedded `::lag_N` suffix from the best-feature name so it correctly classifies a lag-1 winner as "proxy" rather than "coincident".
 - 2026-06-09: Note for future. Datasources CLAUDE.md updated to "one entry per source" model with sub-datasets discovered via provider metadata endpoints rather than materialised in datasets.csv / fields.csv. The deep-quant registry client already handles missing CSVs gracefully (returns empty lists). When datasources regenerates under the new model, retest the client and adapt the synthesis logic if needed.
 
 ---

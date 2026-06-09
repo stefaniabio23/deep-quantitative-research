@@ -1,0 +1,17 @@
+signal_id: biotech-pos-onc-readout-density
+predictor_dataset_ids:
+- aact
+enabled_transforms:
+- raw
+lags:
+- 0
+- 1
+- 2
+max_features: 10
+max_lags: 2
+features_emitted: 3
+truncated_at_max_features: false
+feature_names:
+- aact::raw::lag_0
+- aact::raw::lag_1
+- aact::raw::lag_2

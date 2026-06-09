@@ -1,0 +1,21 @@
+audits:
+- source_cadence: quarterly
+  target_cadence: quarterly
+  variable_type: flow
+  aggregation: sum
+  aggregation_overridden: false
+  periods_created: 70
+  partial_periods_dropped: 0
+  missing_periods: 0
+  duplicate_timestamps_resolved: 0
+  dataset_id: yfinance
+- source_cadence: monthly
+  target_cadence: quarterly
+  variable_type: count
+  aggregation: sum
+  aggregation_overridden: false
+  periods_created: 71
+  partial_periods_dropped: 0
+  missing_periods: 0
+  duplicate_timestamps_resolved: 0
+  dataset_id: aact

@@ -12,6 +12,7 @@ observational signals is "proxy".
 
 from __future__ import annotations
 
+import re
 import warnings
 from typing import Iterable
 
@@ -58,6 +59,17 @@ def _granger_p(
     return min(p_values) if p_values else None
 
 
+_FEATURE_LAG_RE = re.compile(r"::lag_(\d+)$")
+
+
+def _feature_lag(feature_name: str | None) -> int:
+    """Parse the embedded ``::lag_N`` suffix from a feature column name."""
+    if not feature_name:
+        return 0
+    match = _FEATURE_LAG_RE.search(feature_name)
+    return int(match.group(1)) if match else 0
+
+
 def classify_relationship(
     profile: list[dict[str, float | int]],
     *,
@@ -65,14 +77,20 @@ def classify_relationship(
     target: pd.Series | None = None,
     survives_oos: bool = True,
     granger_alpha: float = 0.05,
+    feature_name: str | None = None,
 ) -> tuple[str, str]:
     """Return ``(relationship_type, justification)``.
 
+    The lead-lag profile is computed against the already-lagged best
+    feature, so its lag-0 represents the headline. The true predictor-to-
+    target lead is the sum of the feature's embedded lag plus the best lag
+    in the profile.
+
     Heuristics:
-    - Best lag > 0 and Granger-causal → "causal" (with strong caveats).
-    - Best lag > 0 without Granger evidence → "proxy".
-    - Best lag = 0 → "coincident".
-    - Best lag < 0 → "lagging" (target leads predictor).
+    - Effective lead > 0 with Granger evidence → "causal".
+    - Effective lead > 0 without Granger → "proxy".
+    - Effective lead == 0 → "coincident".
+    - Effective lead < 0 → "lagging" (target leads predictor).
     - Signal does not survive OOS → "spurious".
     - Empty profile → "unknown".
     """
@@ -82,38 +100,41 @@ def classify_relationship(
     if not survives_oos:
         return "spurious", "headline relationship did not survive out-of-sample."
 
-    best_lag, best_corr = _best_lag_corr(profile)
+    profile_lag, best_corr = _best_lag_corr(profile)
+    feature_lag = _feature_lag(feature_name)
+    effective_lead = feature_lag + profile_lag
 
-    if best_lag == 0:
+    if effective_lead == 0:
         return (
             "coincident",
-            f"strongest correlation at lag 0 ({best_corr:.2f}); same-period co-movement.",
+            f"effective predictor-to-target lead is 0 (feature lag {feature_lag} + "
+            f"profile lag {profile_lag}); same-period co-movement at corr={best_corr:.2f}.",
         )
-    if best_lag < 0:
+    if effective_lead < 0:
         return (
             "lagging",
-            f"strongest correlation at lag {best_lag} ({best_corr:.2f}); "
-            "target leads predictor.",
+            f"effective lead is {effective_lead} (feature lag {feature_lag} + "
+            f"profile lag {profile_lag}); target leads predictor at corr={best_corr:.2f}.",
         )
 
     granger_p: float | None = None
     if predictor is not None and target is not None:
-        granger_p = _granger_p(predictor, target, max_lag=min(4, max(1, best_lag + 1)))
+        granger_p = _granger_p(predictor, target, max_lag=min(4, max(1, effective_lead + 1)))
 
     if granger_p is not None and granger_p < granger_alpha:
         return (
             "causal",
-            f"best lag {best_lag} ({best_corr:.2f}); Granger p={granger_p:.3f} < {granger_alpha}; "
+            f"effective lead {effective_lead} (feature lag {feature_lag} + "
+            f"profile lag {profile_lag}); Granger p={granger_p:.3f} < {granger_alpha}; "
             "treat as causal with mechanism caveats from the hypothesis.",
         )
     if granger_p is not None:
         return (
             "proxy",
-            f"best lag {best_lag} ({best_corr:.2f}); Granger p={granger_p:.3f} not significant; "
+            f"effective lead {effective_lead}; Granger p={granger_p:.3f} not significant; "
             "predictor likely a proxy, not a cause.",
         )
     return (
         "proxy",
-        f"best lag {best_lag} ({best_corr:.2f}); no Granger evidence available; "
-        "default to proxy.",
+        f"effective lead {effective_lead}; no Granger evidence available; default to proxy.",
     )

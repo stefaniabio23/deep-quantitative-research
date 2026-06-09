@@ -75,8 +75,13 @@ def kpi_metrics(predictor: pd.Series, target: pd.Series) -> KpiMetrics:
 
     error = (p - t).abs()
     mae = float(error.mean())
-    nonzero = t.replace(0, np.nan).abs()
-    mape = float((error / nonzero).dropna().mean() * 100) if nonzero.notna().any() else float("nan")
+    # MAPE is only meaningful when the target is strictly positive. For
+    # signed series (returns, deltas), it blows up near zero and on sign
+    # flips; surface NaN rather than a meaningless number.
+    if (t > 0).all() and len(t) > 0:
+        mape = float((error / t).mean() * 100)
+    else:
+        mape = float("nan")
     rmse = float(np.sqrt(((p - t) ** 2).mean()))
 
     # Hit rate: predictor sign agrees with realised target sign. Same as

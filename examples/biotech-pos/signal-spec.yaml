@@ -1,0 +1,49 @@
+signal_id: biotech-pos-onc-readout-density
+signal_name: "Biotech PoS, Oncology Phase 3 Readout Density"
+
+hypothesis:
+  statement: >
+    Monthly Phase 3 oncology trial readout count leads quarterly biotech
+    subindex returns by one quarter via re-rating of pipeline NPVs across
+    the oncology-heavy subindex.
+  target_variable: XBI quarterly return
+  expected_direction: positive
+  expected_lag_periods: [1]
+
+target:
+  dataset_id: yfinance
+  field: xbi_quarterly_return
+  cadence: quarterly
+  transform: null
+
+predictors:
+  - dataset_id: aact
+    field: phase3_onc_completions
+    cadence: monthly
+    variable_type: count
+    default_aggregation: sum
+    transforms: [raw]
+    lags: [0, 1, 2]
+
+join_logic:
+  join_keys: [date]
+  time_alignment: period_end
+  release_lag_policy: respect_registry_lag
+
+feature_grid:
+  mode: controlled
+  max_features: 10
+  max_lags: 2
+  multiple_testing_correction: true
+  pre_specified_feature: aact::raw::lag_1
+
+validation:
+  train_period: 2008-03-31/2017-12-31
+  test_period: 2018-03-31/2025-09-30
+  walk_forward: true
+  regime_split: false
+
+outputs:
+  signal_card: true
+  dashboard: false
+  experiment_log: true

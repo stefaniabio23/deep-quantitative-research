@@ -185,6 +185,7 @@ def run_signal(
         predictor=test_predictor,
         target=test_target,
         survives_oos=backtest.survives_oos,
+        feature_name=backtest.best_feature,
     )
 
     recommended = []
