@@ -26,6 +26,20 @@ def _load_csv(path: str) -> pd.DataFrame:
     return df
 
 
+def _require_columns(df: pd.DataFrame, cols: list[str], source: str) -> None:
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        available = ", ".join(df.columns.astype(str))
+        print(f"ERROR: {source} is missing column(s): {missing}. Available: {available}", file=sys.stderr)
+        sys.exit(2)
+
+
+def _require_arg(value, name: str, mode: str) -> None:
+    if value is None:
+        print(f"ERROR: --{name} is required for --mode {mode}", file=sys.stderr)
+        sys.exit(2)
+
+
 def _save_yaml(data: dict, path: str) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -41,7 +55,9 @@ def _save_yaml(data: dict, path: str) -> None:
 
 def run_correlation(input_path: str, x_col: str, y_col: str, output: str,
                     methods: str = "pearson,spearman,distance", rolling: int = None) -> None:
-    df = _load_csv(input_path).dropna(subset=[x_col, y_col])
+    df = _load_csv(input_path)
+    _require_columns(df, [x_col, y_col], input_path)
+    df = df.dropna(subset=[x_col, y_col])
     x = df[x_col].values
     y = df[y_col].values
     n = len(x)
@@ -114,7 +130,8 @@ def run_regression(input_path: str, target: str, features: str, output: str,
         sys.exit(1)
 
     df = _load_csv(input_path)
-    feature_list = [f.strip() for f in features.split(",")]
+    feature_list = [f.strip() for f in features.split(",") if f.strip()]
+    _require_columns(df, [target] + feature_list, input_path)
     df = df[[target] + feature_list].dropna()
 
     X = sm.add_constant(df[feature_list])
@@ -207,7 +224,13 @@ def run_pca(input_path: str, output: str, n_components: int = 5) -> None:
 def run_event_study(events_path: str, prices_path: str, output: str,
                     window: str = "-20,+60") -> None:
     prices = _load_csv(prices_path)
-    events = pd.read_csv(events_path, parse_dates=["date"])
+    try:
+        events = pd.read_csv(events_path, parse_dates=["date"])
+    except ValueError as e:
+        print(f"ERROR: events file {events_path} must have a 'date' column. ({e})", file=sys.stderr)
+        sys.exit(2)
+    if "ticker" not in events.columns:
+        print(f"WARNING: events file {events_path} has no 'ticker' column; falling back to first price column for all events.")
 
     parts = window.replace("+", "").split(",")
     pre, post = int(parts[0]), int(parts[1])
@@ -263,9 +286,11 @@ def run_granger(input_path: str, x_col: str, y_col: str, output: str, max_lags: 
         print("statsmodels not installed. Run: pip install statsmodels")
         sys.exit(1)
 
-    df = _load_csv(input_path)[[x_col, y_col]].dropna()
+    df = _load_csv(input_path)
+    _require_columns(df, [x_col, y_col], input_path)
+    df = df[[x_col, y_col]].dropna()
 
-    print(f"\nGranger causality: {x_col} → {y_col} (max lags = {max_lags})")
+    print(f"\nGranger causality: {x_col} -> {y_col} (max lags = {max_lags})")
     gc_results = grangercausalitytests(df[[y_col, x_col]], maxlag=max_lags, verbose=False)
 
     best_lag = min(gc_results, key=lambda k: gc_results[k][0]["ssr_ftest"][1])

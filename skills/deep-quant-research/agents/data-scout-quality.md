@@ -16,27 +16,29 @@ Read `research_brief.yaml`. Extract each dataset needed, source preference, time
 
 ### Step 2: Fetch via scripts
 
+Source is the first positional argument. Every subcommand caches by default to `.cache/fetch_data/` (set `--cache-dir` to override or `--no-cache` to bypass).
+
 ```bash
 # Equity prices
-python scripts/fetch_data.py --source yfinance --tickers "AAPL,MSFT" --start 2015-01-01 --output ./[slug]/data/prices.csv
+python scripts/fetch_data.py yfinance --tickers "AAPL,MSFT" --start 2015-01-01 --output ./[slug]/data/prices.csv
 
-# Macro (FRED — requires free API key)
-python scripts/fetch_data.py --source fred --series "CPIAUCSL,FEDFUNDS" --start 2000-01-01 --output ./[slug]/data/macro.csv
+# Macro (FRED, requires free API key or falls back to public CSV)
+python scripts/fetch_data.py fred --series "CPIAUCSL,FEDFUNDS" --start 2000-01-01 --output ./[slug]/data/macro.csv
 
 # Fama-French factors
-python scripts/fetch_data.py --source famafrench --dataset "F-F_Research_Data_5_Factors_2x3" --output ./[slug]/data/factors.csv
+python scripts/fetch_data.py famafrench --dataset "F-F_Research_Data_5_Factors_2x3" --output ./[slug]/data/factors.csv
 
 # Clinical trials
-python scripts/fetch_data.py --source clinicaltrials --condition "NSCLC" --phase 3 --status "Completed" --output ./[slug]/data/trials.json
+python scripts/fetch_data.py clinicaltrials --condition "NSCLC" --phase 3 --status "Completed" --output ./[slug]/data/trials.json
 
 # PubMed
-python scripts/fetch_data.py --source pubmed --query "KRAS G12C inhibitor phase 3" --n 100 --output ./[slug]/data/pubmed.json
+python scripts/fetch_data.py pubmed --query "KRAS G12C inhibitor phase 3" --n 100 --output ./[slug]/data/pubmed.json
 
 # OpenTargets
-python scripts/fetch_data.py --source opentargets --target "ENSG00000133703" --output ./[slug]/data/opentargets.json
+python scripts/fetch_data.py opentargets --target "ENSG00000133703" --output ./[slug]/data/opentargets.json
 
 # openFDA
-python scripts/fetch_data.py --source openfda --endpoint drug_approvals --query "sotorasib" --output ./[slug]/data/fda.json
+python scripts/fetch_data.py openfda --endpoint drug_approvals --query "sotorasib" --output ./[slug]/data/fda.json
 ```
 
 **Fallback hierarchy:**
