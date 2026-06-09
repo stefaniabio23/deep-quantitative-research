@@ -32,6 +32,7 @@ from .validation import (
     check_missingness,
     check_outlier_sensitivity,
     check_outliers,
+    check_regime_split,
     check_sample_size,
     check_stationarity_adf,
     check_stationarity_kpss,
@@ -180,6 +181,15 @@ def run_signal(
             headline_corr=backtest.metrics_test.correlation,
         ),
     ]
+
+    if spec.validation.regime_split:
+        checks.append(
+            check_regime_split(
+                test_predictor,
+                test_target,
+                headline_corr=backtest.metrics_test.correlation,
+            )
+        )
 
     relationship_type, relationship_justification = classify_relationship(
         backtest.lead_lag,

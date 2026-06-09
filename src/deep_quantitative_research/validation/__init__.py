@@ -11,6 +11,7 @@ from .data_quality import (
 )
 from .gate import ValidationReport, assemble
 from .multiple_testing import benjamini_hochberg
+from .regime import check_regime_split
 from .robustness import check_lag_sensitivity, check_outlier_sensitivity
 from .statistical_tests import (
     check_autocorrelation,
@@ -28,6 +29,7 @@ __all__ = [
     "check_autocorrelation",
     "check_lag_sensitivity",
     "check_outlier_sensitivity",
+    "check_regime_split",
     "classify_relationship",
     "ValidationReport",
     "assemble",

@@ -1,9 +1,15 @@
-"""Single-signal dashboard HTML emitter with Tufte-aware matplotlib charts.
+"""Dashboard HTML emitters.
 
-Phase 7 ships per-signal rendering. Phase 8+ adds multi-signal aggregation
-(current read, contradiction map across a signal family).
+Phase 7 ships per-signal rendering (``render_dashboard``).
+Phase 8 ships multi-signal aggregation: ``render_family_dashboard`` and
+``render_family_from_run_dirs``.
 """
 
+from .aggregator import (
+    FamilySignal,
+    render_family_dashboard,
+    render_family_from_run_dirs,
+)
 from .charts import (
     confidence_strip,
     fig_to_base64,
@@ -15,6 +21,9 @@ from .html import render_dashboard
 
 __all__ = [
     "render_dashboard",
+    "render_family_dashboard",
+    "render_family_from_run_dirs",
+    "FamilySignal",
     "signal_vs_target_chart",
     "lead_lag_chart",
     "confidence_strip",

@@ -261,5 +261,44 @@ def run_signal_cmd(
     click.echo(f"survives_oos:         {summary.survives_oos}")
 
 
+@main.command("render-family-dashboard")
+@click.option(
+    "--run-dir",
+    "run_dirs",
+    multiple=True,
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to a run directory containing validation-report.yaml + backtest-result.yaml. Repeat per signal.",
+)
+@click.option(
+    "--out",
+    "out_path",
+    required=True,
+    type=click.Path(),
+    help="Where to write the family dashboard HTML.",
+)
+@click.option("--name", default="Signal Family", show_default=True, help="Family display name.")
+def render_family_dashboard_cmd(
+    run_dirs: tuple[str, ...], out_path: str, name: str
+) -> None:
+    """Aggregate multiple run directories into a single family dashboard HTML."""
+    from .dashboard import render_family_from_run_dirs
+
+    if not run_dirs:
+        click.echo("error: provide at least one --run-dir", err=True)
+        sys.exit(2)
+
+    try:
+        html_doc = render_family_from_run_dirs(list(run_dirs), family_name=name)
+    except FileNotFoundError as exc:
+        click.echo(f"error: {exc}", err=True)
+        sys.exit(2)
+
+    target = Path(out_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(html_doc)
+    click.echo(f"wrote {target} ({len(html_doc)} chars; {len(run_dirs)} signal(s))")
+
+
 if __name__ == "__main__":
     main()
