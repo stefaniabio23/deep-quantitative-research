@@ -1,6 +1,6 @@
 ---
 name: dashboard-builder
-description: Aggregate signal cards into an HTML dashboard. Shows current read, related signals (confirming or contradicting), confidence matrix, backtest metrics, feature stability, data quality warnings, caveats, and next iteration. Single-signal and multi-signal modes. Invoke after `signal-synthesis` or when the SignalSpec has `outputs.dashboard: true`. Uses `dashboard/charts.py` for Tufte-styled matplotlib panels and emits a self-contained HTML file.
+description: "Aggregate signal cards into an HTML dashboard. Shows current read, related signals (confirming or contradicting), confidence matrix, backtest metrics, feature stability, data quality warnings, caveats, and next iteration. Single-signal and multi-signal modes. Invoke after signal-synthesis or when the SignalSpec opts in via outputs.dashboard true. Uses dashboard/charts.py for Tufte-styled matplotlib panels and emits a self-contained HTML file."
 ---
 
 # dashboard-builder

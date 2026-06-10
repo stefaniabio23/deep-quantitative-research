@@ -36,18 +36,39 @@ jobs:
           set -euo pipefail
           required_agents=(
             "research-architect"
+            "dataset-scout"
+            "data-quality-auditor"
+            "feature-engineer"
             "backtest-engine"
-            "data-scout-quality"
             "causal-skeptic"
             "findings-evaluator"
-            "report-compiler"
-            "analysis-engine"
+            "dashboard-designer"
           )
           for agent in "${required_agents[@]}"; do
             f="skills/deep-quantitative-research/agents/${agent}.md"
             test -f "$f" || { echo "MISSING: $f"; exit 1; }
             echo "OK: $f"
           done
+
+      - name: Check retired v2 agents are absent
+        run: |
+          set -euo pipefail
+          retired_agents=(
+            "analysis-engine"
+            "data-scout-quality"
+            "report-compiler"
+            "originality-scout"
+            "knowledge-base-builder"
+            "question-sharpener"
+          )
+          for agent in "${retired_agents[@]}"; do
+            f="skills/deep-quantitative-research/agents/${agent}.md"
+            if [ -f "$f" ]; then
+              echo "FOUND RETIRED AGENT: $f (was retired in the v3 canonical set)"
+              exit 1
+            fi
+          done
+          echo "all retired agents absent"
 
       - name: Check canonical sub-skills exist
         run: |
