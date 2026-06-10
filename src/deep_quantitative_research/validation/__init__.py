@@ -9,6 +9,11 @@ from .data_quality import (
     check_outliers,
     check_sample_size,
 )
+from .effective_sample_size import (
+    autocorrelations,
+    bartlett_effective_n,
+    check_effective_sample_size,
+)
 from .gate import ValidationReport, assemble
 from .multiple_testing import benjamini_hochberg
 from .regime import check_regime_split
@@ -37,6 +42,9 @@ __all__ = [
     "check_outlier_sensitivity",
     "check_regime_split",
     "check_selection_bias",
+    "check_effective_sample_size",
+    "autocorrelations",
+    "bartlett_effective_n",
     "classify_relationship",
     "ValidationReport",
     "assemble",

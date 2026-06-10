@@ -28,6 +28,7 @@ from .timeseries.cadence import rollup
 from .timeseries.transformations import apply_transform
 from .validation import (
     check_autocorrelation,
+    check_effective_sample_size,
     check_lag_sensitivity,
     check_missingness,
     check_outlier_sensitivity,
@@ -190,13 +191,22 @@ def run_signal(
         (best_feature_series.index >= test_start) & (best_feature_series.index <= test_end)
     ]
 
+    autocorr_check = check_autocorrelation(test_target)
+    autocorr_p = autocorr_check.value if isinstance(autocorr_check.value, (int, float)) else None
+
     checks = [
         check_sample_size(len(test_target.dropna())),
         check_missingness(test_target),
         check_outliers(test_target),
         check_stationarity_adf(test_target),
         check_stationarity_kpss(test_target),
-        check_autocorrelation(test_target),
+        autocorr_check,
+        check_effective_sample_size(
+            test_predictor,
+            test_target,
+            headline_corr=backtest.metrics_test.correlation,
+            autocorr_ljungbox_p=autocorr_p,
+        ),
         check_lag_sensitivity(backtest.lead_lag, best_lag=0),
         check_outlier_sensitivity(
             test_predictor,

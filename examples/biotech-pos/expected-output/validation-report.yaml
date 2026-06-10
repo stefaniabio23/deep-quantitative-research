@@ -1,6 +1,6 @@
 signal_id: biotech-pos-onc-readout-density
 registry_commit: 1738592ecc7fd4c1681cac73c821121331312ce2
-checked_at: '2026-06-10T16:18:12+00:00'
+checked_at: '2026-06-10T16:58:42+00:00'
 checks:
 - name: sample_size
   verdict: warn
@@ -38,6 +38,15 @@ checks:
   value: 0.4811
   threshold: 0.05
   explanation: Ljung-Box p=0.481 >= 0.05; no significant autocorrelation.
+- name: effective_sample_size
+  verdict: pass
+  value:
+    n: 31
+    n_eff: 31
+    ess_ratio: 1.0
+    ess_adjusted_p: null
+  threshold: 0.05
+  explanation: Ljung-Box did not detect autocorrelation; ESS adjustment not required.
 - name: lag_sensitivity
   verdict: warn
   value: 58.07
