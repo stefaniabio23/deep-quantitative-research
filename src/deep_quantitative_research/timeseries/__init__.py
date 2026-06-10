@@ -25,6 +25,12 @@ from .transformations import (
     yoy_1y,
     zscore,
 )
+from .vintage import (
+    REQUIRED_COLUMNS,
+    as_of_series,
+    first_vintage_series,
+    load_vintage_csv,
+)
 
 __all__ = [
     "apply_release_lag",
@@ -44,4 +50,8 @@ __all__ = [
     "yo2y",
     "yoy_1y",
     "zscore",
+    "REQUIRED_COLUMNS",
+    "as_of_series",
+    "first_vintage_series",
+    "load_vintage_csv",
 ]

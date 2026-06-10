@@ -194,7 +194,22 @@ def assess_join_cmd(source_dataset: str, target_dataset: str, config: str | None
 
 @main.command("run-signal")
 @click.option("--spec", "spec_path", required=True, type=click.Path(exists=True), help="Path to the SignalSpec YAML.")
-@click.option("--target-csv", required=True, type=click.Path(exists=True), help="CSV with date,value for the target series.")
+@click.option(
+    "--target-csv",
+    default=None,
+    type=click.Path(exists=True),
+    help="CSV with date,value for the final-vintage target series.",
+)
+@click.option(
+    "--target-vintage-csv",
+    default=None,
+    type=click.Path(exists=True),
+    help=(
+        "Vintage-aware target CSV (observation_date, vintage_date, value). The "
+        "pipeline picks the first-vintage value per observation and records "
+        "vintage_handled=true in run.yaml, clearing the revisions warning."
+    ),
+)
 @click.option(
     "--predictor-csv",
     "predictor_csv",
@@ -208,7 +223,8 @@ def assess_join_cmd(source_dataset: str, target_dataset: str, config: str | None
 @click.option("--config", default=None, help="Path to config/datasources.yaml (for registry commit hash).")
 def run_signal_cmd(
     spec_path: str,
-    target_csv: str,
+    target_csv: str | None,
+    target_vintage_csv: str | None,
     predictor_csv: tuple[str, ...],
     run_dir: str | None,
     date_col: str,
@@ -217,6 +233,13 @@ def run_signal_cmd(
 ) -> None:
     """Run the SignalSpec end-to-end against CSVs on disk and write the artefacts."""
     from .pipeline import run_signal_from_paths
+
+    if target_csv is None and target_vintage_csv is None:
+        click.echo("error: provide --target-csv or --target-vintage-csv", err=True)
+        sys.exit(2)
+    if target_csv is not None and target_vintage_csv is not None:
+        click.echo("error: provide only one of --target-csv / --target-vintage-csv", err=True)
+        sys.exit(2)
 
     predictor_map: dict[str, Path] = {}
     for entry in predictor_csv:
@@ -247,6 +270,7 @@ def run_signal_cmd(
     summary = run_signal_from_paths(
         spec_path=spec_path,
         target_csv=target_csv,
+        target_vintage_csv=target_vintage_csv,
         predictor_csvs=predictor_map,
         run_dir=run_dir,
         registry_commit=registry_commit,

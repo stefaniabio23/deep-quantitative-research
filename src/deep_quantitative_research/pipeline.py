@@ -110,8 +110,16 @@ def run_signal(
     *,
     run_dir: Path,
     registry_commit: str | None = None,
+    vintage_handled: bool = False,
+    vintage_source: str | None = None,
 ) -> RunSummary:
-    """Drive the pipeline against in-memory Series. Tests use this directly."""
+    """Drive the pipeline against in-memory Series. Tests use this directly.
+
+    When ``vintage_handled`` is True, the ``target`` series is assumed to be
+    first-vintage (or as-of-correct) values, not final-vintage. The
+    validation gate skips the ``revisions_possible`` warning in this case,
+    since the lookahead concern is resolved.
+    """
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -227,7 +235,7 @@ def run_signal(
     # backtest may be optimistic.
     from .validation.data_quality import Check as _Check
 
-    if spec.target.revisions_possible is True:
+    if spec.target.revisions_possible is True and not vintage_handled:
         checks.append(_Check(
             name="revisions",
             verdict="warn",
@@ -240,6 +248,19 @@ def run_signal(
                 "revised macro / retail series often look stronger than they "
                 "did in real time. Treat as suggestive until a vintage-aware "
                 "rerun is available."
+            ),
+        ))
+    elif spec.target.revisions_possible is True and vintage_handled:
+        checks.append(_Check(
+            name="revisions",
+            verdict="pass",
+            value=True,
+            threshold=False,
+            explanation=(
+                f"target dataset `{spec.target.dataset_id}` declares "
+                "revisions_possible=true and this run consumed vintage-aware "
+                "values (first-vintage or as-of-correct); the revisions risk "
+                "is materially addressed."
             ),
         ))
     if spec.target.point_in_time_safe is False:
@@ -314,6 +335,8 @@ def run_signal(
                 "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "registry_commit": registry_commit,
                 "spec_path": None,
+                "vintage_handled": vintage_handled,
+                "vintage_source": vintage_source,
             },
             sort_keys=False,
         )
@@ -361,16 +384,39 @@ def run_signal(
 def run_signal_from_paths(
     *,
     spec_path: Path | str,
-    target_csv: Path | str,
+    target_csv: Path | str | None = None,
+    target_vintage_csv: Path | str | None = None,
     predictor_csvs: dict[str, Path | str],
     run_dir: Path | str,
     registry_commit: str | None = None,
     date_col: str = "date",
     value_col: str = "value",
 ) -> RunSummary:
-    """CSV-on-disk entry point used by the CLI."""
+    """CSV-on-disk entry point used by the CLI.
+
+    Provide exactly one of ``target_csv`` (final-vintage values) or
+    ``target_vintage_csv`` (observation_date, vintage_date, value triples
+    — the pipeline picks first-vintage values per observation).
+    """
+    if target_csv is None and target_vintage_csv is None:
+        raise ValueError("provide --target-csv or --target-vintage-csv")
+    if target_csv is not None and target_vintage_csv is not None:
+        raise ValueError("provide only one of --target-csv / --target-vintage-csv")
+
     spec = load_signal_spec(spec_path)
-    target = _load_csv_series(Path(target_csv), date_col=date_col, value_col=value_col)
+
+    vintage_handled = False
+    vintage_source: str | None = None
+    if target_vintage_csv is not None:
+        from .timeseries.vintage import first_vintage_series, load_vintage_csv
+
+        vintage_df = load_vintage_csv(Path(target_vintage_csv))
+        target = first_vintage_series(vintage_df)
+        vintage_handled = True
+        vintage_source = str(target_vintage_csv)
+    else:
+        target = _load_csv_series(Path(target_csv), date_col=date_col, value_col=value_col)
+
     predictors = {
         dataset_id: _load_csv_series(Path(path), date_col=date_col, value_col=value_col)
         for dataset_id, path in predictor_csvs.items()
@@ -381,4 +427,6 @@ def run_signal_from_paths(
         predictors,
         run_dir=Path(run_dir),
         registry_commit=registry_commit,
+        vintage_handled=vintage_handled,
+        vintage_source=vintage_source,
     )

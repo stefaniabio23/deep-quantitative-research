@@ -1,6 +1,6 @@
 signal_id: biotech-pos-onc-readout-density
-registry_commit: 1738592ecc7fd4c1681cac73c821121331312ce2
-checked_at: '2026-06-10T19:53:30+00:00'
+registry_commit: 4c4ed8fe806da180283d6ce2ddfbfc8daf9b1ec8
+checked_at: '2026-06-10T21:33:34+00:00'
 checks:
 - name: sample_size
   verdict: warn
