@@ -1,6 +1,6 @@
 signal_id: biotech-pos-onc-readout-density
 registry_commit: 1738592ecc7fd4c1681cac73c821121331312ce2
-checked_at: '2026-06-09T22:34:38+00:00'
+checked_at: '2026-06-10T15:52:48+00:00'
 checks:
 - name: sample_size
   verdict: warn
@@ -50,6 +50,15 @@ checks:
   threshold: 30.0
   explanation: dropping top 1.0% of extreme obs changes corr by 24.2%; result is not
     driven by outliers.
+- name: multiple_testing
+  verdict: warn
+  value:
+    p: 0.0728
+    adjusted_p: 0.2185
+    deflated_r: 0.2455
+  threshold: 0.05
+  explanation: headline r=0.327 does NOT survive Bonferroni at m=3 (adjusted p=0.2185
+    >= 0.05). Deflated r=0.246. Result is plausibly a search artifact.
 confidence_cap: medium
 binding_constraint: sample_size
 relationship_type: proxy

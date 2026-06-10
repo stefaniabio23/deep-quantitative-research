@@ -34,6 +34,7 @@ from .validation import (
     check_outliers,
     check_regime_split,
     check_sample_size,
+    check_selection_bias,
     check_stationarity_adf,
     check_stationarity_kpss,
     classify_relationship,
@@ -179,6 +180,12 @@ def run_signal(
             test_predictor,
             test_target,
             headline_corr=backtest.metrics_test.correlation,
+        ),
+        check_selection_bias(
+            headline_corr=backtest.metrics_test.correlation,
+            sample_size=backtest.metrics_test.sample_size,
+            n_features_tested=feature_search.features_tested,
+            pre_specified=feature_search.best_feature_pre_specified,
         ),
     ]
 

@@ -55,6 +55,7 @@ Best feature: aact::raw::lag_1. Train r=0.57, test r=0.33. OOS degradation 42.8%
 - `sample_size`: 31 samples is enough for low only; medium requires 60.
 - `stationarity_adf`: ADF p=0.069 >= 0.05; cannot reject unit root, consider differencing or detrending.
 - `lag_sensitivity`: adjacent-lag correlation drops 58.1% from best (lag=0); result hinges on a single magical lag.
+- `multiple_testing`: headline r=0.327 does NOT survive Bonferroni at m=3 (adjusted p=0.2185 >= 0.05). Deflated r=0.246. Result is plausibly a search artifact.
 
 ## Failure Modes
 
