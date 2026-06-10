@@ -1,0 +1,21 @@
+audits:
+- source_cadence: weekly
+  target_cadence: weekly
+  variable_type: flow
+  aggregation: sum
+  aggregation_overridden: false
+  periods_created: 1134
+  partial_periods_dropped: 0
+  missing_periods: 0
+  duplicate_timestamps_resolved: 0
+  dataset_id: yfinance
+- source_cadence: weekly
+  target_cadence: weekly
+  variable_type: sentiment
+  aggregation: mean
+  aggregation_overridden: false
+  periods_created: 879
+  partial_periods_dropped: 0
+  missing_periods: 0
+  duplicate_timestamps_resolved: 0
+  dataset_id: google-trends

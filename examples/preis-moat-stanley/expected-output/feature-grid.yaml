@@ -1,0 +1,17 @@
+signal_id: preis-moat-stanley-debt-djia
+predictor_dataset_ids:
+- google-trends
+enabled_transforms:
+- zscore_12
+lags:
+- 1
+- 2
+- 3
+max_features: 10
+max_lags: 3
+features_emitted: 3
+truncated_at_max_features: false
+feature_names:
+- google-trends::zscore_12::lag_1
+- google-trends::zscore_12::lag_2
+- google-trends::zscore_12::lag_3

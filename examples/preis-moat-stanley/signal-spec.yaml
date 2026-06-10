@@ -1,0 +1,62 @@
+signal_id: preis-moat-stanley-debt-djia
+signal_name: "Preis-Moat-Stanley 2013 Replication: Google Trends \"debt\" vs DJIA"
+
+hypothesis:
+  statement: >
+    Weekly Google Trends search interest in the term "debt" predicts
+    the following week's DJIA return with a negative sign: when search
+    interest rises above trend, DJIA returns the next week are lower.
+    Pre-registered headline claim from Preis, Moat, Stanley (2013,
+    Scientific Reports), with their 2004-2011 window as train and 2011
+    onward as the genuine out-of-sample extension.
+  target_variable: DJIA weekly close-to-close return
+  expected_direction: negative
+  expected_lag_periods: [1]
+
+target:
+  dataset_id: yfinance
+  field: djia_weekly_return
+  cadence: weekly
+  transform: null
+  revisions_possible: false  # equity index prices are not restated
+  point_in_time_safe: true
+
+predictors:
+  - dataset_id: google-trends
+    field: debt_interest
+    cadence: weekly
+    variable_type: sentiment
+    default_aggregation: mean
+    transforms: [zscore_12]
+    lags: [1, 2, 3]
+
+join_logic:
+  join_keys: [date]
+  time_alignment: period_end
+  release_lag_policy: respect_registry_lag
+
+feature_grid:
+  mode: controlled
+  max_features: 10
+  max_lags: 3
+  multiple_testing_correction: true
+  # The original paper's headline rule was a 3-week trailing deviation
+  # applied with a 1-week lead. zscore_12 is our closest standard
+  # transform; lag_1 is the pre-specified equivalent of their rule.
+  pre_specified_feature: google-trends::zscore_12::lag_1
+
+validation:
+  # The earliest Google Trends chunk (2004 to 2008) failed in our fetch.
+  # We use available data: 2008-12 to 2014-12 as train (6 years; overlaps
+  # the original 2004-2011 window and extends one year past publication),
+  # 2015-01 to 2025-09 as test (10 full years out-of-sample, well past
+  # paper publication in April 2013).
+  train_period: 2008-12-07/2014-12-31
+  test_period: 2015-01-04/2025-09-28
+  walk_forward: true
+  regime_split: false
+
+outputs:
+  signal_card: true
+  dashboard: true
+  experiment_log: true

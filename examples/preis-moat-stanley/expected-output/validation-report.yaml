@@ -1,0 +1,78 @@
+signal_id: preis-moat-stanley-debt-djia
+registry_commit: 4c4ed8fe806da180283d6ce2ddfbfc8daf9b1ec8
+checked_at: '2026-06-10T21:43:39+00:00'
+checks:
+- name: sample_size
+  verdict: pass
+  value: 561
+  threshold:
+    low: 30
+    medium: 60
+    high: 120
+  explanation: 561 samples clears every tier.
+- name: missingness
+  verdict: pass
+  value: 0.0
+  threshold:
+    warn: 5.0
+    fail: 25.0
+  explanation: 0.0% of observations are NaN.
+- name: outliers
+  verdict: warn
+  value: 5
+  threshold: 4.0
+  explanation: 5 observations exceed |z| > 4.0.
+- name: stationarity_adf
+  verdict: pass
+  value: 0.0
+  threshold: 0.05
+  explanation: ADF p=0.000 < 0.05; series is stationary.
+- name: stationarity_kpss
+  verdict: pass
+  value: 0.1
+  threshold: 0.05
+  explanation: KPSS p=0.100 >= 0.05; series is stationary.
+- name: autocorrelation
+  verdict: pass
+  value: 0.0962
+  threshold: 0.05
+  explanation: Ljung-Box p=0.096 >= 0.05; no significant autocorrelation.
+- name: effective_sample_size
+  verdict: pass
+  value:
+    n: 561
+    n_eff: 561
+    ess_ratio: 1.0
+    ess_adjusted_p: null
+  threshold: 0.05
+  explanation: Ljung-Box did not detect autocorrelation; ESS adjustment not required.
+- name: lag_sensitivity
+  verdict: warn
+  value: 96.38
+  threshold: 30.0
+  explanation: adjacent-lag correlation drops 96.4% from best (lag=0); result hinges
+    on a single magical lag.
+- name: outlier_sensitivity
+  verdict: warn
+  value: 68.48
+  threshold: 30.0
+  explanation: dropping top 1.0% of extreme obs drops corr by 68.5%; result is driven
+    by a small number of extreme observations.
+- name: multiple_testing
+  verdict: fail
+  value:
+    p: 0.151
+    adjusted_p: 0.4531
+    deflated_r: -0.0425
+  threshold: 0.05
+  explanation: headline r=-0.061 does NOT survive Bonferroni at m=3 (adjusted p=0.4531
+    >= 0.05). Deflated r=-0.042. Result is plausibly a search artifact.
+confidence_cap: low
+binding_constraint: multiple_testing
+relationship_type: spurious
+recommended_next_iterations:
+- 'Relationship classified spurious: headline relationship did not survive out-of-sample.'
+- Pre-specify the feature in SignalSpec.feature_grid.pre_specified_feature; current
+  best (google-trends::zscore_12::lag_2) was discovered.
+- Investigate why OOS correlation drops. Probe a regime split and check release_lag
+  handling.

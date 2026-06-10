@@ -1,0 +1,40 @@
+mode: kpi_prediction
+signal_id: preis-moat-stanley-debt-djia
+target: djia_weekly_return
+best_feature: google-trends::zscore_12::lag_2
+period:
+  train: 2008-12-07/2014-12-31
+  test: 2015-01-04/2025-09-28
+walk_forward: false
+regime_split: false
+metrics_kpi:
+  correlation_train: -0.09004192148223418
+  correlation_test: -0.0607037933409467
+  rank_correlation_test: -0.04047445466197457
+  directional_accuracy_train: 0.4360655737704918
+  directional_accuracy_test: 0.49910873440285203
+  mae_test: 0.9337096437836145
+  mape_test: .nan
+  rmse_test: 1.168561765753763
+  hit_rate_test: 0.49910873440285203
+  lead_lag_profile:
+  - lag: 0
+    corr: -0.0607
+  - lag: 1
+    corr: 0.0022
+  - lag: 2
+    corr: -0.0259
+  - lag: 3
+    corr: -0.0357
+  - lag: 4
+    corr: -0.0403
+  - lag: 5
+    corr: -0.0149
+  - lag: 6
+    corr: -0.0299
+  oos_degradation_pct: 32.58
+verdict:
+  survives_oos: false
+  confidence: low
+  notes: 'Best feature: google-trends::zscore_12::lag_2. Train r=-0.09, test r=-0.06.
+    OOS degradation 32.6%.'
