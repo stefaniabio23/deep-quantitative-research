@@ -160,6 +160,28 @@ def run_signal(
         truncated_at_max_features=grid_result.truncated_at_max_features,
     )
 
+    # --- selection-bias overlay on survives_oos --------------------------
+    # The KPI backtest's survives_oos rule is correlation-magnitude-based and
+    # does not know about trial count. Tighten it here: a result that fails
+    # Bonferroni at the chosen alpha (when not pre-specified) is not a
+    # surviving signal. Pre-specified directional hypotheses use a one-sided
+    # p-value when the observed sign matches.
+    from .validation.selection_bias import correlation_p_value as _corr_p
+    from .validation.selection_bias import _one_sided_p
+
+    _alpha = 0.05
+    _test_corr = backtest.metrics_test.correlation
+    _test_n = backtest.metrics_test.sample_size
+    _expected_direction = spec.hypothesis.expected_direction
+    if _test_n > 3 and _test_corr == _test_corr:  # not NaN
+        _raw_p_two = _corr_p(_test_corr, _test_n)
+        if feature_search.best_feature_pre_specified:
+            _adj_p = _one_sided_p(_raw_p_two, _test_corr, _expected_direction)
+        else:
+            _adj_p = min(1.0, _raw_p_two * max(1, feature_search.features_tested))
+        if not (_adj_p < _alpha):
+            backtest.survives_oos = False
+
     # --- validation -------------------------------------------------------
     test_start, test_end = _period_bounds(spec.validation.test_period)
     test_target = target_rolled[(target_rolled.index >= test_start) & (target_rolled.index <= test_end)]

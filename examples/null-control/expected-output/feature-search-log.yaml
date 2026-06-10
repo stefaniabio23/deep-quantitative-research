@@ -1,0 +1,9 @@
+features_tested: 3
+lags_tested: 3
+best_feature: aact::raw::lag_1
+best_feature_pre_specified: false
+multiple_testing_correction_needed: true
+correction_method: benjamini_hochberg
+out_of_sample_survives: true
+confidence_cap: high
+truncated_at_max_features: false

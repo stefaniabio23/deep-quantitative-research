@@ -1,0 +1,67 @@
+signal_id: null-control-onc-readout-density
+registry_commit: 1738592ecc7fd4c1681cac73c821121331312ce2
+checked_at: '2026-06-10T16:18:14+00:00'
+checks:
+- name: sample_size
+  verdict: warn
+  value: 31
+  threshold:
+    low: 30
+    medium: 60
+    high: 120
+  explanation: 31 samples is enough for low only; medium requires 60.
+- name: missingness
+  verdict: pass
+  value: 0.0
+  threshold:
+    warn: 5.0
+    fail: 25.0
+  explanation: 0.0% of observations are NaN.
+- name: outliers
+  verdict: pass
+  value: 0
+  threshold: 4.0
+  explanation: 0 observations exceed |z| > 4.0.
+- name: stationarity_adf
+  verdict: pass
+  value: 0.0
+  threshold: 0.05
+  explanation: ADF p=0.000 < 0.05; series is stationary.
+- name: stationarity_kpss
+  verdict: pass
+  value: 0.1
+  threshold: 0.05
+  explanation: KPSS p=0.100 >= 0.05; series is stationary.
+- name: autocorrelation
+  verdict: pass
+  value: 0.5004
+  threshold: 0.05
+  explanation: Ljung-Box p=0.500 >= 0.05; no significant autocorrelation.
+- name: lag_sensitivity
+  verdict: pass
+  value: -177.3
+  threshold: 30.0
+  explanation: adjacent-lag correlation within -177.3% of best; result is not riding
+    on a single lag.
+- name: outlier_sensitivity
+  verdict: pass
+  value: -91.25
+  threshold: 30.0
+  explanation: dropping top 1.0% of extreme obs changes corr by -91.2%; result is
+    not driven by outliers.
+- name: multiple_testing
+  verdict: fail
+  value:
+    p: 0.3679
+    adjusted_p: 1.0
+    deflated_r: 0.0862
+  threshold: 0.05
+  explanation: headline r=0.167 does NOT survive Bonferroni at m=3 (adjusted p=1.0000
+    >= 0.05). Deflated r=0.086. Result is plausibly a search artifact.
+confidence_cap: low
+binding_constraint: multiple_testing
+relationship_type: spurious
+recommended_next_iterations:
+- 'Relationship classified spurious: headline relationship did not survive out-of-sample.'
+- Investigate why OOS correlation drops. Probe a regime split and check release_lag
+  handling.

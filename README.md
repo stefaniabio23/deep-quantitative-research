@@ -26,8 +26,8 @@ If the evidence is weak it caps confidence and returns a documented null. A null
 Two repos, clean separation:
 
 ```text
-~/Projects/datasources/                 canonical public-data registry
-~/Projects/deep-quant-research/         research workflow engine (this repo)
+datasources/                  canonical public-data registry (sibling repo)
+deep-quantitative-research/   research workflow engine (this repo)
 ```
 
 The `datasources` repo owns dataset entries, schemas, fields, join keys, cadence, release lag, point-in-time safety. This repo owns hypotheses, dataset selection reasoning, signal specs, feature grids, backtests, validation, signal cards, and dashboards.
@@ -37,8 +37,8 @@ Layers:
 ```text
 Layer 1  Registry         What data exists?         datasources
 Layer 2  Semantics        What does it mean?        shared
-Layer 3  Experiment       What are we testing?      deep-quant
-Layer 4  Research output  What do we believe?       deep-quant
+Layer 3  Experiment       What are we testing?      this repo
+Layer 4  Research output  What do we believe?       this repo
 ```
 
 Compact form: `Data Registry → Signal Factory → Research Ledger → Dashboard`.
@@ -46,7 +46,7 @@ Compact form: `Data Registry → Signal Factory → Research Ledger → Dashboar
 ## Install
 
 ```bash
-git clone https://github.com/stephbeccag/deep-quantitative-research.git
+git clone https://github.com/stefaniabio23/deep-quantitative-research.git
 cd deep-quantitative-research
 pip install -e ".[dev]"
 cp .env.example .env             # add FRED_API_KEY etc.
@@ -56,42 +56,46 @@ The sibling registry is expected at `../datasources/`. Override with `DATASOURCE
 
 ## Usage
 
-Per-stage commands (recommended):
+Two worked demos are committed under `examples/`. Run either with one command:
 
 ```bash
-deep-quant formulate-hypothesis \
-  --idea "Search interest predicts UK retail sales" \
-  --out experiments/ideas/uk-retail-demand.yaml
+./examples/biotech-pos/run.sh      # planted-signal demo; recovers a real lead-lag
+./examples/null-control/run.sh     # negative control; pipeline returns a documented null
+```
 
-deep-quant find-datasets \
-  --hypothesis experiments/ideas/uk-retail-demand.yaml \
-  --out experiments/specs/dataset-candidates.yaml
+The shipped CLI subcommands:
 
-deep-quant design-signal \
-  --target ons-retail-sales-index \
-  --predictors google-trends-retail-searches,boe-consumer-credit \
-  --out experiments/specs/uk-retail-search-demand-signal.yaml
+```bash
+deep-quant query-datasources --healthcheck
+deep-quant query-datasources --query retail --domain finance-markets
+
+deep-quant build-dataset-contract <dataset_id> --role predictor
+deep-quant score-dataset <dataset_id> --hypothesis path/to/hypothesis.yaml
+deep-quant assess-join <source_dataset> <target_dataset>
 
 deep-quant run-signal \
-  --spec experiments/specs/uk-retail-search-demand-signal.yaml
+  --spec experiments/specs/<signal>.yaml \
+  --target-csv path/to/target.csv \
+  --predictor-csv <dataset_id>=path/to/predictor.csv \
+  --run-dir experiments/runs/<run-id>/
 
-deep-quant render-dashboard \
-  --run experiments/runs/2026-06-09-uk-retail-search-demand/
+deep-quant render-family-dashboard \
+  --run-dir experiments/runs/<run-a>/ \
+  --run-dir experiments/runs/<run-b>/ \
+  --out experiments/outputs/family.html
 ```
 
-End-to-end Claude skill:
+`run-signal` is the end-to-end command. It loads the SignalSpec, rolls cadences, builds the feature grid, runs the KPI backtest, applies the validation gate, and writes every artefact (including `dashboard.html` when `outputs.dashboard: true`) into the run directory.
 
-```text
-/deep-quantitative-research "Does Google Trends interest in GLP-1 drugs predict next-quarter Novo obesity revenue?"
-```
+Per-stage subcommands (`formulate-hypothesis`, `find-datasets`, `design-signal`, `validate-signal`, `render-signal-card`) are planned; see `BUILD_CHECKLIST.md`. Until they ship, drive each stage through the sub-skill specs under `skills/deep-quantitative-research/skills/`.
 
 ## Structure
 
 ```text
 deep-quantitative-research/
-├── README.md, QUICKSTART.md, CHANGELOG.md, CLAUDE.md
+├── README.md, QUICKSTART.md, CHANGELOG.md, CLAUDE.md, CONTRIBUTING.md
 ├── ARCHITECTURE_LOG.md, BUILD_CHECKLIST.md
-├── pyproject.toml, requirements.txt, .env.example, .mcp.json
+├── pyproject.toml, .env.example, .mcp.json
 │
 ├── config/
 │   ├── datasources.yaml           bridge to ../datasources
@@ -105,45 +109,33 @@ deep-quantitative-research/
 │       ├── commands/              one slash command per pipeline stage
 │       ├── workflows/             end-to-end and domain-specific recipes
 │       ├── skills/                12 sub-skills, one per pipeline stage
-│       ├── agents/                8 canonical agents that orchestrate sub-skills
+│       ├── agents/                7 v2-carryover agents; v3 canonical rename pending
 │       ├── templates/             signal-card, dataset-contract, dashboard, etc.
-│       ├── references/            registry interface, guardrails, Tufte, etc.
-│       └── examples/
+│       └── references/            registry interface, guardrails, Tufte, etc.
 │
 ├── src/deep_quantitative_research/
 │   ├── registry/                  bridge client to the datasources repo
 │   ├── research/                  hypothesis, dataset selection, signal spec
 │   ├── timeseries/                cadence, alignment, release lags, transforms
 │   ├── features/                  grid, transforms, selection, overfitting
-│   ├── backtest/                  KPI and trading paths, walk-forward, metrics
-│   ├── validation/                data quality, statistical tests, robustness
+│   ├── backtest/                  KPI path, walk-forward, metrics
+│   ├── validation/                data quality, statistical tests, robustness, selection bias
 │   ├── reporting/                 signal card, charts, markdown
 │   ├── dashboard/                 HTML emitter, multi-signal aggregator
 │   └── schemas/                   YAML schemas for every artefact
 │
-├── scripts/                       thin CLI wrappers around the Python package
-├── experiments/                   research ledger: ideas/ specs/ runs/ outputs/
-├── examples/                      runnable demos with expected outputs
-├── docs/                          architecture, workflow, validation, testing
-└── tests/                         pytest suite with fixtures
+├── examples/
+│   ├── biotech-pos/               planted-signal demo (oncology readouts → biotech subindex)
+│   └── null-control/              negative control demo (white noise → documented null)
+│
+└── tests/                         pytest suite (130 tests)
 ```
 
-## Agents
-
-| Agent | Role |
-|---|---|
-| `research-architect` | Designs the study, sets evidence threshold |
-| `dataset-scout` | Searches the registry for candidate datasets |
-| `data-quality-auditor` | Runs four-bias audit on every dataset |
-| `feature-engineer` | Builds controlled feature grids |
-| `backtest-engine` | Walk-forward KPI / tradable backtests |
-| `causal-skeptic` | Classifies relationship type, blocks unjustified causal language |
-| `findings-evaluator` | Reconciles results, scores confidence, gates the report |
-| `dashboard-designer` | Composes multi-signal dashboard with current read |
+`experiments/` is the runtime research ledger; it's not committed, the pipeline writes into it.
 
 ## Status
 
-**v3.0.0.dev0.** Migration from v2.0.0 in progress. See `BUILD_CHECKLIST.md` for the live plan and `ARCHITECTURE_LOG.md` for the OG-vs-target gap analysis. Pre-v3 state preserved at git tag `pre-v3-2026-06-09`.
+**v3.0.0.dev0.** Migration from v2.0.0 complete; Phases 1 to 8 shipped. See `BUILD_CHECKLIST.md` for the live plan and `ARCHITECTURE_LOG.md` for the OG-vs-target gap analysis. Pre-v3 state preserved at git tag `pre-v3-2026-06-09`.
 
 Deprecated names that may appear in old branches or external links: `deep-research`, `deep-quant-research`.
 

@@ -56,32 +56,54 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
-      - name: Run biotech-pos demo
+      - name: Run biotech-pos demo (planted signal)
         run: ./examples/biotech-pos/run.sh
 
-      - name: Verify expected artefacts exist
+      - name: Run null-control demo (negative control)
+        run: ./examples/null-control/run.sh
+
+      - name: Verify expected artefacts exist for both demos
         run: |
           set -euo pipefail
-          for f in run.yaml cadence-rollup-audit.yaml feature-grid.yaml \
-                   feature-search-log.yaml backtest-result.yaml \
-                   validation-report.yaml signal-card.md dashboard.html; do
-            test -s "examples/biotech-pos/expected-output/${f}" \
-              || { echo "missing or empty: ${f}"; exit 1; }
+          for demo in biotech-pos null-control; do
+            for f in run.yaml cadence-rollup-audit.yaml feature-grid.yaml \
+                     feature-search-log.yaml backtest-result.yaml \
+                     validation-report.yaml signal-card.md dashboard.html; do
+              test -s "examples/${demo}/expected-output/${f}" \
+                || { echo "missing or empty: ${demo}/${f}"; exit 1; }
+            done
           done
 
-      - name: Verify demo headline result is unchanged
-        # Byte-level diff is too strict (matplotlib PNG bytes and timestamp
-        # fields drift across runs). Assert the values the validation gate
-        # is supposed to produce.
+      - name: Verify both demo headlines stay honest
+        # The planted-signal demo must pass (cap=medium, OOS survives, lag_1
+        # picked) and the negative-control demo must fail (cap=low, spurious,
+        # OOS does not survive). A regression in either direction is a real
+        # bug: signal recovery weakening, or noise being mistaken for signal.
         run: |
           set -euo pipefail
           python - <<'PY'
           import yaml
+
+          # Planted-signal demo
           br = yaml.safe_load(open('examples/biotech-pos/expected-output/backtest-result.yaml'))
           vr = yaml.safe_load(open('examples/biotech-pos/expected-output/validation-report.yaml'))
           assert br['best_feature'] == 'aact::raw::lag_1', br['best_feature']
           assert br['verdict']['survives_oos'] is True, br['verdict']
           assert vr['confidence_cap'] == 'medium', vr['confidence_cap']
           assert vr['binding_constraint'] == 'sample_size', vr['binding_constraint']
-          print('demo headline result: OK')
+          assert vr['relationship_type'] in {'proxy', 'causal'}, vr['relationship_type']
+          print('biotech-pos: planted signal correctly recovered.')
+
+          # Negative-control demo
+          nbr = yaml.safe_load(open('examples/null-control/expected-output/backtest-result.yaml'))
+          nvr = yaml.safe_load(open('examples/null-control/expected-output/validation-report.yaml'))
+          assert nbr['verdict']['survives_oos'] is False, nbr['verdict']
+          assert nvr['confidence_cap'] == 'low', nvr['confidence_cap']
+          assert nvr['relationship_type'] == 'spurious', nvr['relationship_type']
+          # Binding constraint can be multiple_testing or out_of_sample; both
+          # are honest reads of "this is noise".
+          assert nvr['binding_constraint'] in {
+              'multiple_testing', 'out_of_sample', 'sample_size',
+          }, nvr['binding_constraint']
+          print('null-control: noise correctly rejected.')
           PY

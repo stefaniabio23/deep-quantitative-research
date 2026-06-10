@@ -1,8 +1,8 @@
-# Biotech PoS, Oncology Phase 3 Readout Density
+# Null Control, Phase 3 Oncology Readout Density
 
 ## Hypothesis
 
-Monthly Phase 3 oncology trial readout count leads quarterly biotech subindex returns by one quarter via re-rating of pipeline NPVs across the oncology-heavy subindex.
+Monthly Phase 3 oncology readout counts lead quarterly biotech subindex returns by one quarter. (Asserted hypothesis; the data has no such relationship and the pipeline should reject it.)
 
 ## Economic Mapping
 
@@ -15,7 +15,7 @@ Predictor concepts to xbi_quarterly_return via the mechanism declared in the hyp
 
 ## Time-Series
 
-- `yfinance` rolled quarterly → quarterly by sum (periods=70, partial_dropped=0).
+- `yfinance` rolled quarterly → quarterly by sum (periods=71, partial_dropped=0).
 - `aact` rolled monthly → quarterly by sum (periods=71, partial_dropped=0).
 
 Best feature: `aact::raw::lag_1`. Train window 2008-03-31/2017-12-31; test window 2018-03-31/2025-09-30.
@@ -28,19 +28,19 @@ Single-feature linear specification. The test is whether the chosen feature lead
 
 | Metric | Train | Test |
 | --- | ---: | ---: |
-| Correlation | 0.57 | 0.33 |
-| Directional accuracy | 0.36 | 0.55 |
-| MAE | n/a | 32.80 |
+| Correlation | 0.09 | 0.17 |
+| Directional accuracy | 0.56 | 0.65 |
+| MAE | n/a | 25.44 |
 | MAPE (%) | n/a | n/a |
-| RMSE | n/a | 33.81 |
-| Hit rate | n/a | 0.55 |
+| RMSE | n/a | 25.72 |
+| Hit rate | n/a | 0.65 |
 
-OOS degradation: 42.80%.
+OOS degradation: -77.23%.
 Sample size (test): 31.
 
 ## Current Read
 
-Best feature: aact::raw::lag_1. Train r=0.57, test r=0.33. OOS degradation 42.8%.
+Best feature: aact::raw::lag_1. Train r=0.09, test r=0.17. OOS degradation -77.2%.
 
 ## Related Signals
 
@@ -48,14 +48,12 @@ Best feature: aact::raw::lag_1. Train r=0.57, test r=0.33. OOS degradation 42.8%
 
 ## Confidence
 
-**Medium.** Binding constraint: `sample_size`.
+**Low.** Binding constraint: `multiple_testing`.
 
 ## Caveats
 
 - `sample_size`: 31 samples is enough for low only; medium requires 60.
-- `stationarity_adf`: ADF p=0.069 >= 0.05; cannot reject unit root, consider differencing or detrending.
-- `lag_sensitivity`: adjacent-lag correlation drops 58.1% from best (lag=0); result hinges on a single magical lag.
-- `multiple_testing`: pre-specified feature; raw p=0.0728 >= 0.05. Result is suggestive but does not reach significance at the chosen alpha.
+- `multiple_testing`: headline r=0.167 does NOT survive Bonferroni at m=3 (adjusted p=1.0000 >= 0.05). Deflated r=0.086. Result is plausibly a search artifact.
 
 ## Failure Modes
 
@@ -64,9 +62,10 @@ Best feature: aact::raw::lag_1. Train r=0.57, test r=0.33. OOS degradation 42.8%
 
 ## Next Iteration
 
-- Address stationarity_adf: differencing or detrending may stabilise the result.
+- Relationship classified spurious: headline relationship did not survive out-of-sample.
+- Investigate why OOS correlation drops. Probe a regime split and check release_lag handling.
 
 ## Links
 
-- SignalSpec: `experiments/specs/biotech-pos-onc-readout-density.yaml`
+- SignalSpec: `experiments/specs/null-control-onc-readout-density.yaml`
 - Run artefacts: `experiments/runs/<run-id>/`

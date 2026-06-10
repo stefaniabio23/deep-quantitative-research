@@ -122,13 +122,32 @@ def test_selection_bias_pass_when_bonferroni_clears():
     assert check.value["deflated_r"] > 0
 
 
-def test_selection_bias_warn_when_bonferroni_fails():
-    # Weak correlation + large grid = should not clear
+def test_selection_bias_fails_when_bonferroni_rejects():
+    # Weak correlation + large grid without pre-specification = caps at low
     check = check_selection_bias(
         headline_corr=0.2, sample_size=30, n_features_tested=50,
     )
-    assert check.verdict == "warn"
+    assert check.verdict == "fail"
     assert "does NOT survive Bonferroni" in check.explanation
+
+
+def test_selection_bias_pre_specified_passes_at_alpha():
+    # Pre-specified, decent r, decent n: raw p clears, no Bonferroni
+    check = check_selection_bias(
+        headline_corr=0.5, sample_size=60, n_features_tested=3, pre_specified=True,
+    )
+    assert check.verdict == "pass"
+    assert "pre-specified" in check.explanation
+    assert check.value["adjusted_p"] is None  # no Bonferroni applied
+
+
+def test_selection_bias_pre_specified_warns_when_below_alpha():
+    # Pre-specified but below significance: warn (suggestive, not conclusive)
+    check = check_selection_bias(
+        headline_corr=0.15, sample_size=30, n_features_tested=3, pre_specified=True,
+    )
+    assert check.verdict == "warn"
+    assert "pre-specified" in check.explanation
 
 
 def test_selection_bias_check_value_includes_deflated_r():

@@ -67,6 +67,21 @@ def deflated_correlation(r: float, n: int, n_trials: int) -> float:
     return float(sign * max(0.0, abs(r) - correction))
 
 
+def _one_sided_p(p_two_sided: float, observed_r: float, expected_direction: str | None) -> float:
+    """Halve the two-sided p when the observed sign matches a pre-declared direction.
+
+    A pre-specified directional hypothesis is testing a one-sided alternative;
+    using a two-sided p wastes half the power for no methodological gain.
+    """
+    if math.isnan(p_two_sided) or expected_direction is None:
+        return p_two_sided
+    if expected_direction == "positive" and observed_r > 0:
+        return p_two_sided / 2
+    if expected_direction == "negative" and observed_r < 0:
+        return p_two_sided / 2
+    return p_two_sided
+
+
 def check_selection_bias(
     headline_corr: float,
     sample_size: int,
@@ -74,6 +89,7 @@ def check_selection_bias(
     *,
     alpha: float = 0.05,
     pre_specified: bool = False,
+    expected_direction: str | None = None,
 ) -> Check:
     """Refuse to certify a correlation without logged trial count.
 
@@ -118,15 +134,43 @@ def check_selection_bias(
             explanation="headline correlation is NaN; selection-bias check skipped.",
         )
 
-    if pre_specified and n_features_tested == 1:
+    if pre_specified:
+        # Pre-specification commits the analyst to a hypothesis before looking
+        # at the data; the headline gets the raw p, no Bonferroni inflation
+        # regardless of how many other features were tried as sanity checks.
+        # A pre-specified DIRECTIONAL hypothesis additionally gets a one-sided
+        # test (half the p) when the observed sign matches.
+        p_two = correlation_p_value(headline_corr, sample_size)
+        p = _one_sided_p(p_two, headline_corr, expected_direction)
+        value_block = {
+            "p": round(p, 4) if not math.isnan(p) else None,
+            "adjusted_p": None,
+            "deflated_r": round(headline_corr, 4),
+        }
+        if not math.isnan(p) and p < alpha:
+            return Check(
+                name="multiple_testing",
+                verdict="pass",
+                value=value_block,
+                threshold=alpha,
+                explanation=(
+                    f"pre-specified feature; p={p:.4f} < {alpha}. "
+                    "No Bonferroni inflation needed because the analyst "
+                    "committed to this feature in advance."
+                ),
+            )
+        # Pre-specified but not significant even at the raw p: warn (not
+        # fail) because the commitment limits the false-positive risk to
+        # what the raw p reflects.
         return Check(
             name="multiple_testing",
-            verdict="pass",
-            value={"p": None, "adjusted_p": None, "deflated_r": round(headline_corr, 4)},
+            verdict="warn",
+            value=value_block,
             threshold=alpha,
             explanation=(
-                "single pre-specified feature; multiple-testing correction "
-                "not required."
+                f"pre-specified feature; raw p={p:.4f} >= {alpha}. "
+                "Result is suggestive but does not reach significance at "
+                "the chosen alpha."
             ),
         )
 
@@ -148,7 +192,11 @@ def check_selection_bias(
             f"Deflated r={deflated:.3f}."
         )
     else:
-        verdict = "warn"
+        # Bonferroni rejects: the headline does not clear multiple-testing
+        # at the chosen alpha. With no pre-specification to limit the
+        # false-positive risk, the result is plausibly noise. Cap the
+        # overall verdict at low.
+        verdict = "fail"
         adj_str = f"{adjusted_p:.4f}" if not math.isnan(adjusted_p) else "nan"
         explanation = (
             f"headline r={headline_corr:.3f} does NOT survive Bonferroni at "

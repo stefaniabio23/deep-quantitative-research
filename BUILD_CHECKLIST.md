@@ -1,6 +1,6 @@
 # Deep Quantitative Research, Full Architecture Spec Checklist
 
-Persistent, tickable plan for the v3 migration. Stephanie's comprehensive spec is the source of truth; this file is its enacted form. Pair with `ARCHITECTURE_LOG.md` for the OG inventory and rationale.
+Persistent, tickable plan for the v3 migration. The author's comprehensive spec is the source of truth; this file is its enacted form. Pair with `ARCHITECTURE_LOG.md` for the OG inventory and rationale.
 
 **How to use this file**
 
@@ -120,7 +120,7 @@ cli command: deep-quant
 - [x] Define CLI package as `deep_quantitative_research` in `pyproject.toml` (implementation in Phase 4).
 - [x] Update README, QUICKSTART, CHANGELOG.
 - [x] Remove old references to `deep-research` or `deep-quant-research` in core docs; deprecation note added to README and CONTRIBUTING.
-- [ ] Update memory notes (`~/Desktop/second-brain/compounds/deep-quant-research.md`, `~/Desktop/Second Brain/work/deep-quant-research.md`, `PROJECTS.md`). **Deferred to after re-push.**
+- [ ] Update author's local memory notes and project registry. **Deferred to after re-push.**
 - [ ] Update `~/.claude/SKILLS.md` lookup table. **Deferred to after re-push.**
 - [x] Migration note added to CHANGELOG.md under [3.0.0.dev0].
 
@@ -1178,7 +1178,7 @@ templates/
 - [ ] Add model template.
 - [ ] Add dashboard template.
 - [ ] Add validation report template.
-- [ ] Add insight template (from Stephanie's canon, spec lines 308 to 319).
+- [ ] Add insight template (author's canon, spec lines 308 to 319).
 
 ### 9.2 Signal Template Sections
 
@@ -1704,23 +1704,23 @@ Add to root `CLAUDE.md`:
 
 The architecture is complete when:
 
-- [ ] The repo has one canonical name.
-- [ ] The skill has one canonical installable path.
-- [ ] The README and SKILL.md agree.
-- [ ] The root and skill folders no longer compete.
-- [ ] `datasources` is referenced, not duplicated.
-- [ ] Dataset IDs are used in signal specs.
-- [ ] Every run records datasource registry commit.
-- [ ] Dataset contracts are generated before backtests.
-- [ ] Cadence roll-up handles variable types correctly.
-- [ ] Feature grids are controlled and logged.
-- [ ] Backtests distinguish KPI prediction from tradable signal testing.
-- [ ] Validation flags overfitting, leakage, and weak PIT safety.
-- [ ] Signal cards include confidence, caveats, and current read.
-- [ ] Dashboards show signal state, not just charts.
-- [ ] Tests run with `pytest`.
-- [ ] Demo runs end-to-end.
-- [ ] Outputs are reproducible from the research ledger.
+- [x] The repo has one canonical name. (Local + GitHub both `deep-quantitative-research`.)
+- [x] The skill has one canonical installable path. (`skills/deep-quantitative-research/`)
+- [x] The README and SKILL.md agree.
+- [x] The root and skill folders no longer compete.
+- [x] `datasources` is referenced, not duplicated.
+- [x] Dataset IDs are used in signal specs.
+- [x] Every run records datasource registry commit.
+- [x] Dataset contracts are generated before backtests. (Materialised in `pipeline.py` from contract schema; full enforcement at the CLI gate is post-v3.)
+- [x] Cadence roll-up handles variable types correctly. (`timeseries/cadence.py`; refuses unsafe sum / mean by `variable_type`.)
+- [x] Feature grids are controlled and logged. (`features/grid.py` + `features/overfitting.py`.)
+- [ ] Backtests distinguish KPI prediction from tradable signal testing. (KPI path ships; tradable path deferred to post-v3.)
+- [x] Validation flags overfitting, leakage, and weak PIT safety.
+- [x] Signal cards include confidence, caveats, and current read.
+- [x] Dashboards show signal state, not just charts.
+- [x] Tests run with `pytest`. (132 green; 3-version matrix in CI.)
+- [x] Demo runs end-to-end. (Both biotech-pos and null-control via `./run.sh`; CI re-runs both and asserts honest verdicts.)
+- [x] Outputs are reproducible from the research ledger. (run.yaml records registry commit + signal id + timestamp per run.)
 
 ---
 
@@ -1760,7 +1760,7 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 
 - [ ] Anthropic `data` plugin: sql-queries, data-exploration, data-visualization, statistical-analysis, data-validation, interactive-dashboard-builder.
 - [ ] Anthropic `financial-data-analyst` quickstart for chart picker logic.
-- [ ] Anthropic `bio-research` plugin (`scientific-problem-selection`) already downloaded at `~/Downloads/SKILL.md`.
+- [ ] Anthropic `bio-research` plugin (`scientific-problem-selection`) available upstream.
 
 ### 20.2 Standalone book-derived skills
 
@@ -1793,7 +1793,8 @@ claim → dataset_id → field → join_key → cadence transform → feature �
 - 2026-06-09: Phase 5 (CI) completed. Replaced v2 `validate-skill.yml` (which checked for retired agents and shared protocols) with a v3-aware version that verifies the canonical 7 agents, 12 sub-skill folders, 4 config files, and templates/references presence. Added `test.yml` with a pytest matrix (3.11/3.12/3.13) and a separate demo-smoke job (pinned to 3.13 to match the committed expected-output) that reruns the biotech-pos demo and fails on any drift. Trigger-hint validator rule downgraded from error to warning so v3's terser sub-skill descriptions don't fail CI.
 - 2026-06-09: Phase 7 (dashboard + advanced sub-skill content) substantially completed. Implemented `src/deep_quantitative_research/dashboard/` (charts.py with Tufte rc and three chart helpers; html.py with a self-contained HTML emitter using inline CSS and base64-embedded PNGs). Wired into the pipeline so a SignalSpec with `outputs.dashboard: true` produces `dashboard.html` alongside the signal card. Filled the visual-display, dashboard-builder, and causal-inference sub-skill SKILL.mds with full content. Added templates/dashboard-template.md and references/visual-display-principles.md. Updated the biotech-pos demo to emit a dashboard. 12 new tests, 101 total green. Updated CI demo-smoke: byte-level diff replaced with a key-field assertion (matplotlib PNGs and timestamps drift across runs). Feature-family ANOVA and regime split deferred to Phase 8.
 - 2026-06-09: Phase 8 (regime-split + multi-signal aggregator) completed. Added `validation/regime.py` with `check_regime_split` that splits the test window at the midpoint (or an explicit date), computes per-regime correlations, and flags relative dispersion above 50% or sign disagreements. Wired into the pipeline when `spec.validation.regime_split: true`. Added `dashboard/aggregator.py` with `FamilySignal.from_run_dir`, `render_family_dashboard`, and `render_family_from_run_dirs` for multi-signal HTML rollups (confidence summary cards, signal table, sign-agreement contradiction matrix). New `deep-quant render-family-dashboard` CLI command. 9 new tests, 110 total green. Feature-family ANOVA and trading-mode backtest stay deferred to post-v3.
-- 2026-06-10: Refinement after first user review. Local dir renamed to `~/Projects/deep-quantitative-research/` and remote URL updated to `stefaniabio23/deep-research`. Added `validation/selection_bias.py` with `bonferroni`, `correlation_p_value`, `deflated_correlation`, and `check_selection_bias`. The gate now REFUSES to certify a result when `features_tested` is missing (verdict=fail). When logged, it surfaces a Bonferroni-adjusted p-value and a Bailey-López-de-Prado-style deflated correlation, raising warn when the headline does not survive correction. Pre-specified single-feature runs bypass with verdict=pass. Pipeline wires the check into every run; biotech-pos demo now shows the new check with adjusted_p=0.22 (warn) while the cap and binding constraint stay at medium / sample_size. 17 new tests, 130 total green.
+- 2026-06-10: Refinement after first user review. Local dir renamed to `deep-quantitative-research` and remote URL updated to `stefaniabio23/deep-research`. Added `validation/selection_bias.py` with `bonferroni`, `correlation_p_value`, `deflated_correlation`, and `check_selection_bias`. The gate now REFUSES to certify a result when `features_tested` is missing (verdict=fail). When logged, it surfaces a Bonferroni-adjusted p-value and a Bailey-López-de-Prado-style deflated correlation, raising warn when the headline does not survive correction. Pre-specified single-feature runs bypass with verdict=pass. Pipeline wires the check into every run; biotech-pos demo now shows the new check with adjusted_p=0.22 (warn) while the cap and binding constraint stay at medium / sample_size. 17 new tests, 130 total green.
+- 2026-06-10: Refinement round 2 after second user review. (1) Fixed README clone URL (was wrong account), cut dead CLI command blocks the README was advertising, trimmed the structure tree to what's actually in the repo, replaced home-directory paths with generic forms. (2) Added `examples/null-control/` negative-control demo: white-noise predictor against an independent random target. The pipeline must produce a documented null. (3) Tightened `check_selection_bias`: Bonferroni rejection (without pre-specification) is now `verdict=fail` (caps at low) instead of `warn` (caps at medium). The pre-specified path bypasses Bonferroni regardless of n_features_tested and uses a one-sided p when the SignalSpec's `expected_direction` matches the observed sign. (4) Pipeline now overlays a Bonferroni-adjusted (or one-sided pre-spec) significance check on `backtest.survives_oos`, so noise runs flow through to `relationship_type=spurious`. (5) CI demo-smoke job extended to run both demos and assert biotech-pos recovers (cap=medium, OOS=True, proxy/causal) AND null-control rejects (cap=low, OOS=False, spurious). (6) Scrubbed home paths and personalised references from BUILD_CHECKLIST.md for the public repo. (7) Section 18 acceptance criteria ticked for everything now true. 132 total green.
 - 2026-06-09: Note for future. Datasources CLAUDE.md updated to "one entry per source" model with sub-datasets discovered via provider metadata endpoints rather than materialised in datasets.csv / fields.csv. The deep-quant registry client already handles missing CSVs gracefully (returns empty lists). When datasources regenerates under the new model, retest the client and adapt the synthesis logic if needed.
 
 ---

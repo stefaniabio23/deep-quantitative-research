@@ -1,0 +1,51 @@
+signal_id: null-control-onc-readout-density
+signal_name: "Null Control, Phase 3 Oncology Readout Density"
+
+hypothesis:
+  statement: >
+    Monthly Phase 3 oncology readout counts lead quarterly biotech subindex
+    returns by one quarter. (Asserted hypothesis; the data has no such
+    relationship and the pipeline should reject it.)
+  target_variable: XBI quarterly return
+  expected_direction: positive
+  expected_lag_periods: [1]
+
+target:
+  dataset_id: yfinance
+  field: xbi_quarterly_return
+  cadence: quarterly
+  transform: null
+
+predictors:
+  - dataset_id: aact
+    field: phase3_onc_completions
+    cadence: monthly
+    variable_type: count
+    default_aggregation: sum
+    transforms: [raw]
+    lags: [0, 1, 2]
+
+join_logic:
+  join_keys: [date]
+  time_alignment: period_end
+  release_lag_policy: respect_registry_lag
+
+feature_grid:
+  mode: controlled
+  max_features: 10
+  max_lags: 2
+  multiple_testing_correction: true
+  # Deliberately not pre-specified, to force the multiple-testing
+  # correction onto the gate.
+  pre_specified_feature: null
+
+validation:
+  train_period: 2008-03-31/2017-12-31
+  test_period: 2018-03-31/2025-09-30
+  walk_forward: true
+  regime_split: false
+
+outputs:
+  signal_card: true
+  dashboard: true
+  experiment_log: true
