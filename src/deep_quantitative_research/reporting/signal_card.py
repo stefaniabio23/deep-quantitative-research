@@ -103,7 +103,8 @@ def render_signal_card(
     confidence = section(
         "Confidence",
         f"**{validation.confidence_cap.title()}.** "
-        f"Binding constraint: `{validation.binding_constraint or 'none'}`.",
+        f"Binding constraint: `{validation.binding_constraint or 'none'}`. "
+        "Tier semantics: see `skills/deep-quantitative-research/references/confidence-tiers.md`.",
     )
 
     caveat_lines = []

@@ -237,21 +237,76 @@ class RegistryClient:
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             return None
 
-    def healthcheck(self) -> dict[str, Any]:
-        """Single-call diagnostic for `deep-quant query-datasources --healthcheck`."""
+    def healthcheck(
+        self,
+        *,
+        min_sources: int = 1,
+        min_datasets: int = 1,
+        min_join_keys: int = 1,
+    ) -> dict[str, Any]:
+        """Single-call diagnostic for `deep-quant query-datasources --healthcheck`.
+
+        Returns counts, registry commit, and an explicit ``warnings`` list
+        plus an ``ok`` flag. Empties masquerade as a passing healthcheck if
+        callers only look at the count totals; the warnings catch the
+        common failure modes:
+
+        - No sources loaded at all (registry repo missing or generate.py
+          never run).
+        - Sources present but datasets / join-keys empty (catalog generation
+          half-finished, or the registry moved to a sources-only schema
+          without the downstream consumer being told).
+        - ``require_commit_hash: true`` configured but the datasources
+          repo isn't a git checkout, so a research run cannot be locked.
+        """
+        commit = self.commit_hash()
+        counts = {
+            "sources": len(self.sources),
+            "datasets": len(self.datasets),
+            "fields": sum(len(v) for v in self.fields_by_dataset.values()),
+            "join_keys": len(self.join_keys),
+        }
+        warnings_list: list[str] = []
+
+        if counts["sources"] < min_sources:
+            warnings_list.append(
+                f"only {counts['sources']} sources loaded (expected >= {min_sources}); "
+                "check that the datasources repo exists at the configured path and "
+                "scripts/generate.py has been run."
+            )
+        else:
+            # Sources are present; partial / empty downstream tables suggest
+            # a half-built or stale catalog.
+            if counts["datasets"] < min_datasets:
+                warnings_list.append(
+                    f"{counts['sources']} sources loaded but only {counts['datasets']} "
+                    "datasets; the catalog may be incomplete or generated/datasets.csv "
+                    "may be missing."
+                )
+            if counts["join_keys"] < min_join_keys:
+                warnings_list.append(
+                    f"{counts['sources']} sources loaded but only {counts['join_keys']} "
+                    "join keys; generated/join-keys.csv may be missing or empty."
+                )
+
+        requires_commit = bool(self._versioning_cfg.get("require_commit_hash"))
+        if requires_commit and not commit:
+            warnings_list.append(
+                "config requires a datasources registry commit hash, but the "
+                "datasources repo is not a git checkout. Research runs cannot be "
+                "locked or reproduced."
+            )
+
         return {
             "config_path": str(self.config_path) if self.config_path else None,
             "repo_path": str(self.repo_path),
             "generated_path": str(self.generated_path),
-            "registry_commit": self.commit_hash(),
+            "registry_commit": commit,
             "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "counts": {
-                "sources": len(self.sources),
-                "datasets": len(self.datasets),
-                "fields": sum(len(v) for v in self.fields_by_dataset.values()),
-                "join_keys": len(self.join_keys),
-            },
-            "requires_commit_hash": bool(self._versioning_cfg.get("require_commit_hash")),
+            "counts": counts,
+            "requires_commit_hash": requires_commit,
+            "warnings": warnings_list,
+            "ok": not warnings_list,
         }
 
     def snapshot(self, dataset_ids: list[str]) -> dict[str, Any]:

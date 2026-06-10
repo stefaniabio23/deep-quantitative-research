@@ -50,7 +50,7 @@ KPI prediction mode:
 
 **{{Low | Medium | High}}.** Binding constraint: `{{check_name}}`.
 
-(The confidence statement mirrors the `validation_report.confidence_cap` field exactly. No editorial upgrades.)
+(The confidence statement mirrors the `validation_report.confidence_cap` field exactly. No editorial upgrades. Tier semantics, including what a reader is entitled to assume at each level, live in [`references/confidence-tiers.md`](../references/confidence-tiers.md).)
 
 ## Caveats
 

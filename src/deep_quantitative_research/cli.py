@@ -78,6 +78,8 @@ def query_datasources(
         info = client.healthcheck()
         if output_format == "json":
             click.echo(json.dumps(info, indent=2))
+            if not info["ok"]:
+                sys.exit(1)
             return
         click.echo(f"repo:               {info['repo_path']}")
         click.echo(f"generated:          {info['generated_path']}")
@@ -88,12 +90,11 @@ def query_datasources(
             f"counts:             sources={counts['sources']} datasets={counts['datasets']} "
             f"fields={counts['fields']} join_keys={counts['join_keys']}"
         )
-        if info["requires_commit_hash"] and not info["registry_commit"]:
-            click.echo(
-                "warning: config requires a commit hash but the datasources repo "
-                "is not a git checkout. Research runs will refuse to start.",
-                err=True,
-            )
+        click.echo(f"ok:                 {info['ok']}")
+        for warn in info["warnings"]:
+            click.echo(f"warning: {warn}", err=True)
+        if not info["ok"]:
+            sys.exit(1)
         return
 
     if query_text is None and not (domain or entry_kind or cadence or join_key):

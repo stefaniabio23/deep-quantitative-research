@@ -48,7 +48,7 @@ Best feature: aact::raw::lag_1. Train r=0.09, test r=0.17. OOS degradation -77.2
 
 ## Confidence
 
-**Low.** Binding constraint: `multiple_testing`.
+**Low.** Binding constraint: `multiple_testing`. Tier semantics: see `skills/deep-quantitative-research/references/confidence-tiers.md`.
 
 ## Caveats
 
