@@ -237,6 +237,39 @@ class RegistryClient:
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             return None
 
+    def remote_url(self) -> str | None:
+        """Return ``origin``'s remote URL, or None when unavailable."""
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(self.repo_path), "remote", "get-url", "origin"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            return result.stdout.strip()
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+
+    def is_dirty(self) -> bool | None:
+        """Return True when the registry working tree has uncommitted changes.
+
+        Returns None when git is unavailable. A True value combined with a
+        commit hash means the locked commit does not represent what the run
+        actually saw.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(self.repo_path), "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            return bool(result.stdout.strip())
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+
     def healthcheck(
         self,
         *,
@@ -310,18 +343,42 @@ class RegistryClient:
         }
 
     def snapshot(self, dataset_ids: list[str]) -> dict[str, Any]:
-        """Build a registry-lock.yaml block for a research run."""
+        """Build a registry-lock.yaml block for a research run.
+
+        Records enough provenance for another machine to reproduce the run:
+        commit hash, remote URL, and whether the working tree was dirty when
+        the snapshot was taken. A hash against an unpushed local commit is
+        not reproducible; surfacing remote_url + dirty_tree makes that
+        explicit instead of silent.
+        """
         commit = self.commit_hash()
+        remote = self.remote_url()
+        dirty = self.is_dirty()
         if self._versioning_cfg.get("require_commit_hash") and not commit:
             raise RegistryError(
                 "config requires datasources commit hash but git is unavailable "
                 f"at {self.repo_path}. Initialise the repo as a git checkout."
             )
+        warnings: list[str] = []
+        if commit and dirty:
+            warnings.append(
+                "datasources working tree had uncommitted changes when this run "
+                "was locked; the recorded commit does not represent what the run "
+                "actually saw."
+            )
+        if commit and not remote:
+            warnings.append(
+                "datasources repo has no remote configured; the commit hash is "
+                "only meaningful on this machine."
+            )
         return {
             "repo": "datasources",
             "path": str(self.repo_path),
+            "remote_url": remote,
             "commit": commit,
+            "dirty_tree": dirty,
             "snapshot_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "warnings": warnings,
             "datasets": [
                 {"dataset_id": did, "registry_commit": commit}
                 for did in dataset_ids

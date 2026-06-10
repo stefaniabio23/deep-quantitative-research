@@ -17,6 +17,9 @@ class Target:
     field: str
     cadence: str
     transform: str | None = None
+    # Provenance / vintage handling (PIT discipline). Unknown when None.
+    revisions_possible: bool | None = None
+    point_in_time_safe: bool | None = None
 
 
 @dataclass
@@ -96,6 +99,8 @@ def load_signal_spec(path: Path | str) -> SignalSpec:
         field=t["field"],
         cadence=t["cadence"],
         transform=t.get("transform"),
+        revisions_possible=t.get("revisions_possible"),
+        point_in_time_safe=t.get("point_in_time_safe"),
     )
 
     predictors = [

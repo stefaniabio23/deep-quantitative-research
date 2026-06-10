@@ -1,6 +1,6 @@
 signal_id: null-control-onc-readout-density
 registry_commit: 1738592ecc7fd4c1681cac73c821121331312ce2
-checked_at: '2026-06-10T17:05:02+00:00'
+checked_at: '2026-06-10T19:53:32+00:00'
 checks:
 - name: sample_size
   verdict: warn

@@ -221,6 +221,41 @@ def run_signal(
         ),
     ]
 
+    # PIT discipline: if the target dataset can be restated and the run
+    # does not handle vintage data, surface a named warning. v3 has no
+    # vintage handling yet; this is the haircut so a reader knows the
+    # backtest may be optimistic.
+    from .validation.data_quality import Check as _Check
+
+    if spec.target.revisions_possible is True:
+        checks.append(_Check(
+            name="revisions",
+            verdict="warn",
+            value=True,
+            threshold=False,
+            explanation=(
+                f"target dataset `{spec.target.dataset_id}` declares "
+                "revisions_possible=true; this run uses final-vintage data "
+                "without point-in-time reconstruction. Signals built on "
+                "revised macro / retail series often look stronger than they "
+                "did in real time. Treat as suggestive until a vintage-aware "
+                "rerun is available."
+            ),
+        ))
+    if spec.target.point_in_time_safe is False:
+        checks.append(_Check(
+            name="point_in_time_safety",
+            verdict="warn",
+            value=False,
+            threshold=True,
+            explanation=(
+                f"target dataset `{spec.target.dataset_id}` declares "
+                "point_in_time_safe=false; the value at time T was not fully "
+                "observable by T plus release_lag_days. The backtest may "
+                "embed lookahead. Validate by hand or use a PIT-safe alternative."
+            ),
+        ))
+
     if spec.validation.regime_split:
         checks.append(
             check_regime_split(

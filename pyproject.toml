@@ -28,7 +28,11 @@ dependencies = [
   "yfinance>=0.2.40,<1.0",
   "requests>=2.31,<3.0",
   "pyyaml>=6.0,<7.0",
-  "matplotlib>=3.8,<4.0",
+  # matplotlib pinned to a minor series because the biotech-pos and
+  # null-control demos embed matplotlib PNG bytes in dashboard.html;
+  # pinning narrows the byte-level drift across CI runs. Bump on
+  # purpose when regenerating expected-output.
+  "matplotlib~=3.10.9",
   "duckdb>=1.0,<2.0",
   "click>=8.1,<9.0",
   "jsonschema>=4.21,<5.0",
