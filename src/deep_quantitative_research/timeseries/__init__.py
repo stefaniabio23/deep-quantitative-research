@@ -28,6 +28,8 @@ from .transformations import (
 from .vintage import (
     REQUIRED_COLUMNS,
     as_of_series,
+    final_vintage_series,
+    first_revisions,
     first_vintage_series,
     load_vintage_csv,
 )
@@ -52,6 +54,8 @@ __all__ = [
     "zscore",
     "REQUIRED_COLUMNS",
     "as_of_series",
+    "final_vintage_series",
+    "first_revisions",
     "first_vintage_series",
     "load_vintage_csv",
 ]

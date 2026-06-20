@@ -11,6 +11,8 @@ import yaml
 
 from deep_quantitative_research.timeseries.vintage import (
     as_of_series,
+    final_vintage_series,
+    first_revisions,
     first_vintage_series,
     load_vintage_csv,
 )
@@ -66,6 +68,35 @@ def test_first_vintage_empty_returns_empty():
     empty = pd.DataFrame(columns=["observation_date", "vintage_date", "value"])
     series = first_vintage_series(empty)
     assert series.empty
+
+
+def test_final_vintage_picks_latest_publication(tmp_path: Path):
+    path = _write_vintage_csv(tmp_path)
+    df = load_vintage_csv(path)
+    series = final_vintage_series(df)
+    assert len(series) == 3
+    # Jan obs was revised 10.0 -> 11.0; final is 11.0.
+    assert series.loc["2024-01-31"] == 11.0
+    # Feb obs never revised; final equals its single value 12.0.
+    assert series.loc["2024-02-29"] == 12.0
+    # Mar obs was revised 13.0 -> 14.0; final is 14.0.
+    assert series.loc["2024-03-31"] == 14.0
+
+
+def test_first_revisions_signed_difference(tmp_path: Path):
+    path = _write_vintage_csv(tmp_path)
+    df = load_vintage_csv(path)
+    rev = first_revisions(df)
+    # Only Jan (+1.0) and Mar (+1.0) were revised; Feb has a single vintage
+    # and is dropped rather than zero-filled.
+    assert list(rev.index) == [pd.Timestamp("2024-01-31"), pd.Timestamp("2024-03-31")]
+    assert rev.loc["2024-01-31"] == pytest.approx(1.0)
+    assert rev.loc["2024-03-31"] == pytest.approx(1.0)
+
+
+def test_first_revisions_empty_returns_empty():
+    empty = pd.DataFrame(columns=["observation_date", "vintage_date", "value"])
+    assert first_revisions(empty).empty
 
 
 def test_as_of_series_returns_latest_visible_value(tmp_path: Path):
