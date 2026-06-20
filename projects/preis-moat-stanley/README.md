@@ -109,16 +109,67 @@ dashboard.html
 The signal card carries the headline verdict and binding
 constraint; the validation report lists every check's value.
 
-## Family-wide multiple-testing (post-headline)
+## Family-wide multiple-testing (the McLean-Pontiff frame)
 
-`data/predictors_family.csv` contains the term family
+`data/predictors_family.csv` carries the 10-term family
 (`debt, stocks, credit, unemployment, inflation, recession,
-mortgage, savings, investment, bankruptcy`). To run the
-family-wide test, re-run the pipeline per term and use
-`deep-quant render-family-dashboard` to aggregate. If "debt"
-clears alone but the family-wide Bonferroni kills it (with the
-canonical 1 / m = 0.005 alpha for m=10 terms), the original
-result was selection bias.
+mortgage, savings, investment, bankruptcy`). With 3 lags per term,
+the family is **m = 30 trials**. To run:
+
+```bash
+python3 run_family.py
+```
+
+The script reuses the pipeline's `zscore_12` transform and
+`correlation_p_value` primitive; the SignalSpec window split (train
+2008-12 to 2014-12, test 2015-01 to 2025-09) applies per trial.
+
+### Result (run 2026-06-14)
+
+**0 of 30 trials survive Bonferroni in-sample (alpha = 0.05).**
+**1 of 30 trials survives Bonferroni out-of-sample.**
+
+The single OOS survivor is `recession` at lag 1
+(test r = -0.141, raw p = 0.001, Bonferroni-adjusted p = 0.024). Under
+Bonferroni at m = 30 we expect 5% chance of any one trial firing
+under the null; getting 1 of 30 is within noise rather than evidence.
+
+Headline interpretation:
+
+- Even **before** any multiple-testing correction, no term-lag
+  combination has a significant in-sample correlation at alpha = 0.05.
+  The smallest in-sample raw p-value across 30 trials is 0.088 (for
+  `investment` at lag 2). The famous 326% PnL number cannot have
+  come from a predictive relationship of the strength implied; it
+  came from picking the strategy that happened to win after the fact
+  across 98 keywords and a parameter grid.
+- For `debt` specifically — the paper's headline term — the
+  publication-decay pattern is visible. Train r = -0.074 at lag 1
+  decays to test r = +0.003. Lag 2 holds train r = -0.090 but test
+  r = -0.061 (also non-significant). Lag 3 train r = -0.046 decays
+  to test r = +0.003.
+
+See `expected-output/family-results.csv` for the full 30-row table
+and `expected-output/family-summary.md` for the rendered markdown.
+
+### Methodological note
+
+The original paper tested 98 keywords and reported the top performer.
+With m = 98 and the canonical alpha = 0.05, the per-trial Bonferroni
+threshold is 0.00051. A correlation of |r| ≈ 0.20 with n ≈ 500 has
+p ≈ 1e-6 — that **would** clear the bar. But the actual paper's
+data (2004-2011, ~365 weekly obs) suggests an even higher r needed.
+Even with 365 obs, hitting Bonferroni at m = 98 requires |r| > 0.21.
+The original paper's headline correlation between "debt"
+search-volume deviation and DJIA return was on the order of 0.06-
+0.10 (consistent with what we measure here). It was the PnL through
+a long/short trading rule that produced the 326% number, not the
+underlying predictive correlation.
+
+This is the McLean-Pontiff finding generalised: when you apply the
+multiple-testing correction the original methodology hid, the
+return predictor is gone. When you extend the period out-of-sample,
+the predictor that was already gone stays gone.
 
 ## Result (run 2026-06-10)
 
