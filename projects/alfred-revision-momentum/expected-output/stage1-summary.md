@@ -1,38 +1,40 @@
-# ALFRED revision-momentum, stage 1
+# ALFRED revision-momentum, stage 1 (Tier-1 refined)
 
-**Revision momentum, Bonferroni at m = 9 trials (alpha = 0.05):**
+**PIT-safe momentum, primary family (growth, 90d), Bonferroni m = 3, CI excludes 0:**
 
-- Full-sample survivors: **3 of 9**.
-- Out-of-sample (>= 2015) survivors: **0 of 9**.
+- Survivors: **1 of 3**.
 
-## Momentum trials
+## Momentum trials (PIT-safe; * = primary)
 
-| Series | Lag | Full r | Full n | Full p (Bonferroni) | OOS r | OOS n | OOS p (Bonferroni) |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| INDPRO | 1 | 0.157 | 1190 | 0.000 | 0.012 | 135 | 1.000 |
-| INDPRO | 2 | 0.307 | 1189 | 0.000 | 0.040 | 135 | 1.000 |
-| INDPRO | 3 | 0.203 | 1188 | 0.000 | 0.024 | 135 | 1.000 |
-| PAYEMS | 1 | 0.046 | 852 | 1.000 | 0.052 | 136 | 1.000 |
-| PAYEMS | 2 | 0.032 | 851 | 1.000 | 0.079 | 136 | 1.000 |
-| PAYEMS | 3 | 0.040 | 850 | 1.000 | 0.094 | 136 | 1.000 |
-| RSAFS | 1 | -0.098 | 299 | 0.820 | -0.093 | 136 | 1.000 |
-| RSAFS | 2 | -0.011 | 298 | 1.000 | -0.036 | 136 | 1.000 |
-| RSAFS | 3 | -0.009 | 297 | 1.000 | 0.003 | 136 | 1.000 |
+| Series | Unit | Horizon | Full r | 95% CI | n | Bonferroni p | OOS r | OOS n |
+|---|---|---:|---:|---|---:|---:|---:|---:|
+| INDPRO * | growth_rev | 90 | 0.057 | [-0.040, 0.150] | 1188 | 0.151 | 0.002 | 136 |
+| INDPRO | growth_rev | 365 | -0.072 | [-0.155, 0.022] | 1179 | - | 0.179 | 136 |
+| INDPRO | rel_level_rev | 90 | 0.000 | [-0.018, 0.018] | 1188 | - | -0.098 | 136 |
+| INDPRO | rel_level_rev | 365 | -0.057 | [-0.098, -0.013] | 1179 | - | -0.213 | 136 |
+| PAYEMS * | growth_rev | 90 | 0.098 | [0.025, 0.176] | 850 | 0.012 | 0.220 | 137 |
+| PAYEMS | growth_rev | 365 | 0.080 | [0.007, 0.135] | 841 | - | 0.129 | 137 |
+| PAYEMS | rel_level_rev | 90 | 0.044 | [-0.006, 0.082] | 850 | - | 0.070 | 137 |
+| PAYEMS | rel_level_rev | 365 | 0.076 | [-0.084, 0.197] | 841 | - | 0.243 | 137 |
+| RSAFS * | growth_rev | 90 | 0.016 | [-0.160, 0.193] | 297 | 1.000 | 0.012 | 137 |
+| RSAFS | growth_rev | 365 | 0.055 | [-0.086, 0.179] | 287 | - | 0.099 | 137 |
+| RSAFS | rel_level_rev | 90 | -0.042 | [-0.155, 0.130] | 297 | - | 0.059 | 137 |
+| RSAFS | rel_level_rev | 365 | 0.105 | [-0.084, 0.318] | 287 | - | 0.035 | 137 |
 
-## Sign persistence (share of consecutive revisions sharing sign)
+## Sign persistence of growth revisions (vs 0.5)
 
 | Series | Pairs | Same-sign share | z vs 0.5 |
 |---|---:|---:|---:|
-| PAYEMS | 852 | 0.566 | 3.84 |
-| RSAFS | 299 | 0.465 | -1.21 |
-| INDPRO | 1190 | 0.568 | 4.70 |
+| PAYEMS | 848 | 0.587 | 5.08 |
+| RSAFS | 298 | 0.537 | 1.27 |
+| INDPRO | 974 | 0.487 | -0.83 |
 
-## Point-in-time gap (lag-1 autocorrelation of MoM growth)
+## Point-in-time gap (lag-1 AC of MoM growth, with 95% CI)
 
-| Series | First-vintage AC1 | Final-vintage AC1 | Gap (final - first) |
-|---|---:|---:|---:|
-| PAYEMS | 0.085 | 0.090 | +0.006 |
-| RSAFS | -0.084 | -0.045 | +0.039 |
-| INDPRO | 0.225 | 0.504 | +0.279 |
+| Series | First-vintage AC1 | Final-vintage AC1 | Gap | Gap 95% CI |
+|---|---:|---:|---:|---|
+| PAYEMS | 0.085 | 0.090 | +0.006 | [-0.022, +0.266] |
+| RSAFS | -0.084 | -0.045 | +0.039 | [-0.043, +0.115] |
+| INDPRO | 0.225 | 0.504 | +0.279 | [+0.126, +0.353] |
 
-A positive gap means a naive analyst using fully-revised data would see growth autocorrelation that was not knowable in real time.
+A gap whose CI excludes 0 means final-vintage data shows growth autocorrelation that was not knowable in real time.

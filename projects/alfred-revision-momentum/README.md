@@ -16,35 +16,45 @@ ignored flag into a measured effect, exercising the vintage primitives
 (`first_vintage_series`, `final_vintage_series`, `first_revisions`,
 `as_of_series`) end to end.
 
-## Verdict (run 2026-06-21)
+## Verdict (run 2026-06-21, Tier-1 refined)
 
 Three monthly series (PAYEMS, RSAFS, INDPRO), ALFRED vintages, restricted
-to observations with a genuine timely first release. Full artifacts in
+to observations with a genuine timely first release. Revisions are
+measured at a fixed 90-day horizon on month-over-month **growth** (not raw
+level), the momentum predictor is **point-in-time-safe** (only revisions
+already realized by the new number's release date), and every statistic
+carries a moving-block-bootstrap 95% CI. Full artifacts in
 `expected-output/`.
 
 | Stage | Question | Result |
 |---|---|---|
-| 1a momentum | revision_t vs revision_{t-k}, Bonferroni m = 9 | **3/9 survive full-sample (all INDPRO, lags 1-3); 0/9 out-of-sample (>= 2015)** |
-| 1a sign-persistence | do consecutive revisions share sign? | **PAYEMS z = 3.84, INDPRO z = 4.70 (both significant); RSAFS not** |
-| 1b PIT gap | final-vintage minus first-vintage growth autocorrelation | **INDPRO +0.279 (0.225 to 0.504); PAYEMS +0.006; RSAFS +0.039** |
+| 1 momentum | PIT-safe growth-revision momentum, Bonferroni m = 3, CI excludes 0 | **1/3 survives: PAYEMS r = 0.098, CI [0.025, 0.176], OOS r = 0.220. INDPRO collapses to r = 0.057 (CI includes 0). RSAFS null.** |
+| 1 sign-persistence | do consecutive growth revisions share sign? | **PAYEMS z = 5.08 (significant); RSAFS, INDPRO not** |
+| 1 PIT gap | final-vintage minus first-vintage growth autocorrelation | **INDPRO +0.279, CI [+0.126, +0.353] (significant); PAYEMS +0.006 and RSAFS +0.039 not** |
 | 2  | revision direction predicts the Treasury-yield move? | pre-registered, not run |
 
-**Read.** Revision momentum is real but concentrated and fragile. Only
-industrial production shows a strong magnitude correlation between
-successive revisions, and even that does not survive out-of-sample after
-2015. Direction is more persistent than magnitude: payrolls and
-industrial-production revisions repeat their sign well above chance, even
-where the size correlation is weak.
+**Read.** The Tier-1 refinements flipped the naive result, which is the
+point of running them. A level-based, look-ahead-prone test credited
+industrial production with strong revision momentum. Once revisions are
+measured on growth (so a benchmark that shifts a block of months by a
+constant cannot manufacture momentum) and the predictor is restricted to
+what was actually knowable at release, **INDPRO's momentum collapses to
+insignificance**. It was an artifact of level-scaling and look-ahead.
 
-The robust finding is the point-in-time gap, and it is the methodology
-made flesh. For industrial production, a naive analyst downloading
-fully-revised data sees a lag-1 growth autocorrelation of 0.50; only 0.22
-of that was knowable in real time. The revised series nearly **doubles**
-the apparent predictability. That gap, not a tradable signal, is the
-result: it is a clean, quantified demonstration of why backtests on
-final-vintage data overstate what was actually forecastable. The signal
-many would "discover" in industrial production is mostly an artifact of
-looking at restated numbers.
+The one real, point-in-time-safe revision momentum is in **nonfarm
+payrolls**: small (r about 0.10) but significant under Bonferroni, with a
+bootstrap CI clear of zero, and it **holds out-of-sample** (OOS r = 0.22).
+Sign persistence corroborates it (z = 5.08): payroll revisions repeat
+their direction well above chance. So the honest signal is the opposite of
+what the naive run reported, payrolls, not industrial production.
+
+The robust structural finding survives: the **industrial-production
+point-in-time gap**, now with a bootstrap CI that excludes zero. A naive
+analyst on fully-revised data sees a lag-1 growth autocorrelation of 0.50;
+only 0.22 was knowable in real time. Revised data more than **doubles** the
+apparent predictability. That gap, not a tradable signal, is the result: a
+quantified demonstration of why final-vintage backtests overstate what was
+forecastable.
 
 The pre-registration lives in `signal-spec.yaml`. Re-run with a
 `FRED_API_KEY` and diff your output against `expected-output/`.
@@ -58,22 +68,30 @@ Stage 1 uses ALFRED only and is fully self-contained:
    series. FRED returns a wide matrix (one row per observation, a column
    per vintage on which the value changed); the fetcher melts it into a
    long CSV with columns `observation_date, vintage_date, value`.
-2. **Reconstruct.** Observations are first restricted to those with a
-   genuine timely first release (first vintage within ~one quarter of the
-   observation date), dropping early observations whose earliest archived
-   vintage is decades late. Then `first_vintage_series` gives the
-   real-time initial release; `final_vintage_series` gives today's
-   fully-revised value; `first_revisions` gives the signed
-   second-minus-first revision per observation.
-3. **Momentum test.** For each series and lag k in {1,2,3}, correlate
-   revision_t against revision_{t-k}. Bonferroni over the m = 3 x 3 = 9
-   family, with an out-of-sample split at 2015-01-01. A sign-persistence
-   statistic (share of consecutive revisions sharing sign, z vs 0.5)
-   gives a second, distribution-light read on the same question.
+2. **Reconstruct (timely + growth + fixed horizon).** Observations are
+   first restricted to those with a genuine timely first release (first
+   vintage within ~one quarter of the observation date), dropping early
+   observations whose earliest archived vintage is decades late. The
+   revision for each observation is then taken at a **fixed 90-day
+   horizon** (the value as-of first-release + 90 days, minus the first
+   release) and on **month-over-month growth**, so a benchmark that shifts
+   a block of months by a constant cannot manufacture momentum. A
+   scale-free relative-level revision is reported alongside as a
+   robustness unit.
+3. **Momentum test (PIT-safe).** The predictor for observation t is the
+   fixed-horizon revision of the most recent earlier observation whose
+   revision window had already closed by t's first-release date, so there
+   is no look-ahead. Correlate target revision against this predictor;
+   Bonferroni over the m = 3 primary family (growth, 90d, one per series);
+   out-of-sample split at 2015-01-01; a moving-block bootstrap attaches a
+   95% CI to every correlation, and a trial counts as a survivor only if
+   the CI also excludes zero. A sign-persistence statistic (share of
+   consecutive growth revisions sharing sign) gives a second read.
 4. **PIT gap.** Month-over-month growth computed on first-vintage vs
-   final-vintage values; report the lag-1 autocorrelation under each.
-   The difference is what a naive final-data backtest would wrongly
-   credit to predictability.
+   final-vintage values; report the lag-1 autocorrelation under each and
+   the gap, with a moving-block-bootstrap 95% CI on the gap. The gap is
+   what a naive final-data backtest would wrongly credit to
+   predictability.
 
 ### Stage 2 (pre-registered, not yet run)
 
@@ -102,10 +120,12 @@ python3 run_revision_momentum.py --self-test
 ## Verification
 
 `run_revision_momentum.py --self-test` builds synthetic vintages with a
-planted AR(1) revision process (phi = 0.6 on `PAYEMS`, zero on the
-others) and asserts the runner recovers the planted momentum
-(`PAYEMS` lag-1 survives Bonferroni; the noise series do not). The
-shared vintage primitives are covered in `tests/test_vintage.py`.
+planted AR(1) revision process (phi = 0.85 on `PAYEMS`, zero on the
+others), asserts the predictor alignment is free of look-ahead (each
+target's predictor was realized by the target's release date), and checks
+the runner recovers the planted momentum (`PAYEMS` survives Bonferroni
+with a bootstrap CI clear of zero; the noise series do not). The shared
+vintage primitives are covered in `tests/test_vintage.py`.
 
 ## Caveats
 

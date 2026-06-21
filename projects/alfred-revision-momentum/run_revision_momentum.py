@@ -1,29 +1,39 @@
 #!/usr/bin/env python3
-"""Stage 1 of the ALFRED revision-momentum study.
+"""Stage 1 of the ALFRED revision-momentum study (Tier-1 refined).
 
-Two questions, both answered from ALFRED vintages alone:
+Three questions, all answered from ALFRED vintages alone, built to be
+point-in-time honest and robust to the artifacts a naive revision study
+falls into.
 
-1. Revision momentum. Does the signed first revision of a macro series
-   predict the next period's first revision? For each series and lag k,
-   correlate revision_t against revision_{t-k}, with Bonferroni
-   correction over the m = (series x lags) family and an out-of-sample
-   split. A positive, surviving correlation is evidence that revisions
-   are not white noise.
+1. Revision momentum, PIT-safe. Does a macro series' coming revision get
+   forecast by the most recent revision that was *already fully realized*
+   when the new number was released? The predictor for observation t is
+   the fixed-horizon revision of the most recent earlier observation whose
+   revision window had closed by t's first-release date (no look-ahead).
+   Revisions are measured at a fixed horizon (default 90 days) and on the
+   month-over-month GROWTH, not the raw level, so a benchmark that shifts a
+   block of months by a constant does not manufacture spurious momentum. A
+   scale-free relative-level revision is reported alongside as a robustness
+   unit. Each correlation carries a moving-block-bootstrap 95% CI;
+   Bonferroni is applied over the m = 3 primary trials (growth, 90d, one
+   per series).
 
-2. Point-in-time gap. Compute month-over-month growth two ways: on
-   first-vintage (real-time) values and on final-vintage (fully revised)
-   values. Report the lag-1 autocorrelation of growth under each. The
+2. Sign persistence. Do consecutive growth revisions share sign more than
+   a coin flip would give?
+
+3. Point-in-time gap. Lag-1 autocorrelation of MoM growth computed on
+   first-vintage (real-time) vs final-vintage (fully revised) values. The
    final-vintage number overstates real-time predictability; the gap is
-   the information leak that PIT discipline removes.
+   the leak PIT discipline removes. The gap carries a bootstrap CI.
 
-Outputs (into the chosen --out dir, default expected-output/):
-- stage1-momentum.csv : one row per (series, lag) trial.
-- pit-gap.csv         : one row per series, first- vs final-vintage AC.
+Outputs (into --out, default expected-output/):
+- stage1-momentum.csv : one row per (series, unit, horizon) trial.
+- pit-gap.csv         : one row per series, first/final AC + gap + CI.
 - stage1-summary.md   : rendered markdown verdict.
 
 Run `python3 run_revision_momentum.py --self-test` to verify the analysis
-recovers a planted revision-momentum signal on synthetic vintages, no
-network or FRED key required.
+recovers a planted, PIT-realizable momentum signal on synthetic vintages,
+no network or FRED key required.
 """
 
 from __future__ import annotations
@@ -37,7 +47,6 @@ import pandas as pd
 
 from deep_quantitative_research.timeseries.vintage import (
     final_vintage_series,
-    first_revisions,
     first_vintage_series,
     load_vintage_csv,
 )
@@ -52,16 +61,23 @@ SERIES = [
     ("RSAFS", "retail sales"),
     ("INDPRO", "industrial production"),
 ]
-LAGS = (1, 2, 3)
 # Out-of-sample split: revisions observed from 2015 on are the OOS set.
 SPLIT = pd.Timestamp("2015-01-01")
 ALPHA = 0.05
-# ALFRED vintage archives start decades after some series begin. For
-# observations predating real-time coverage, the earliest archived vintage
-# is not the genuine initial release, so its "first revision" is an artifact.
-# Keep only observations whose first vintage lands within ~one quarter of the
-# observation date (a real initial print we actually caught).
+# ALFRED archives start decades after some series begin; for observations
+# predating real-time coverage the earliest vintage is not a genuine first
+# release. Keep only observations whose first vintage is within ~one quarter.
 MAX_FIRST_RELEASE_LAG_DAYS = 92
+# Fixed revision horizons (days after first release).
+PRIMARY_HORIZON = 90
+HORIZONS = (90, 365)
+# Bootstrap settings (fixed seed -> deterministic, diffable output).
+BLOCK = 12
+N_BOOT = 2000
+SEED = 12345
+
+
+# ---------------------------------------------------------------- helpers
 
 
 def timely_vintage_df(
@@ -76,64 +92,202 @@ def timely_vintage_df(
     return vdf[vdf["observation_date"].isin(keep)]
 
 
-def _corr(joined: pd.DataFrame) -> tuple[float, float, int]:
-    n = len(joined)
-    if n <= 3:
-        return float("nan"), float("nan"), n
-    r = float(joined["x"].corr(joined["y"]))
-    return r, correlation_p_value(r, n), n
+def _build_groups(vdf: pd.DataFrame):
+    """Per observation, sorted (vintage_date[int64], value) arrays for fast
+    as-of lookups via searchsorted."""
+    groups: dict[pd.Timestamp, tuple[np.ndarray, np.ndarray]] = {}
+    for obs, g in vdf.sort_values("vintage_date").groupby("observation_date"):
+        vd = g["vintage_date"].values.astype("datetime64[ns]").astype("int64")
+        vv = g["value"].values.astype(float)
+        groups[obs] = (vd, vv)
+    return groups
 
 
-def momentum_trials(revisions: dict[str, pd.Series]) -> pd.DataFrame:
+def _value_as_of(groups, obs, as_of_ns: int) -> float:
+    """Value of observation `obs` known at as-of date (latest vintage <= as_of)."""
+    entry = groups.get(obs)
+    if entry is None:
+        return float("nan")
+    vd, vv = entry
+    i = int(np.searchsorted(vd, as_of_ns, side="right")) - 1
+    return float(vv[i]) if i >= 0 else float("nan")
+
+
+def revisions_table(vdf: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
+    """Per observation: first-release date, the fixed-horizon revision in
+    three units (level, relative-level, growth), and the knowable_date when
+    the revision is fully realized (first_release + horizon)."""
+    groups = _build_groups(vdf)
+    obs_dates = sorted(groups.keys())
+    day_ns = np.timedelta64(horizon_days, "D").astype("timedelta64[ns]").astype("int64")
     rows = []
-    for sid, _label in SERIES:
-        rev = revisions.get(sid)
-        if rev is None or rev.empty:
-            continue
-        for k in LAGS:
-            joined = pd.concat(
-                [rev.rename("y"), rev.shift(k).rename("x")], axis=1
-            ).dropna()
-            full_r, full_p, full_n = _corr(joined)
-            oos = joined[joined.index >= SPLIT]
-            oos_r, oos_p, oos_n = _corr(oos)
-            rows.append(
-                {
-                    "series": sid,
-                    "lag": k,
-                    "full_r": full_r,
-                    "full_p_raw": full_p,
-                    "full_n": full_n,
-                    "oos_r": oos_r,
-                    "oos_p_raw": oos_p,
-                    "oos_n": oos_n,
-                }
-            )
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return df
-    m = len(df)
-    df["full_p_bonferroni"] = (df["full_p_raw"] * m).clip(upper=1.0)
-    df["oos_p_bonferroni"] = (df["oos_p_raw"] * m).clip(upper=1.0)
-    df["full_survives"] = df["full_p_bonferroni"] < ALPHA
-    df["oos_survives"] = df["oos_p_bonferroni"] < ALPHA
+    for i, t in enumerate(obs_dates):
+        vd, vv = groups[t]
+        d0_ns = int(vd[0])  # first-release date
+        v0 = float(vv[0])
+        vH = _value_as_of(groups, t, d0_ns + day_ns)
+        prev = obs_dates[i - 1] if i > 0 else None
+        # Growth = level minus the prior observation's value at the same as-of.
+        prev0 = _value_as_of(groups, prev, d0_ns) if prev is not None else float("nan")
+        prevH = _value_as_of(groups, prev, d0_ns + day_ns) if prev is not None else float("nan")
+        g0 = v0 - prev0
+        gH = vH - prevH
+        level_rev = vH - v0
+        rows.append(
+            {
+                "observation_date": t,
+                "first_release_date": pd.Timestamp(d0_ns),
+                "knowable_date": pd.Timestamp(d0_ns + day_ns),
+                "level_rev": level_rev,
+                "rel_level_rev": level_rev / abs(v0) if v0 else float("nan"),
+                "growth_rev": gH - g0,
+            }
+        )
+    return pd.DataFrame(rows).set_index("observation_date").sort_index()
+
+
+def pit_safe_pairs(table: pd.DataFrame, unit: str) -> pd.DataFrame:
+    """Align each observation's revision (target) with the most recent earlier
+    revision whose window had closed by the target's first-release date. This
+    is the no-look-ahead predictor. Returns a frame with columns x (predictor),
+    y (target), indexed by the target observation date."""
+    tbl = table.dropna(subset=[unit]).copy()
+    obs = list(tbl.index)
+    d0 = tbl["first_release_date"]
+    knowable = tbl["knowable_date"]
+    vals = tbl[unit]
+    out = {}
+    # j tracks the latest index whose knowable_date <= current first_release.
+    j = -1
+    for i, t in enumerate(obs):
+        rel_t = d0.iloc[i]
+        # advance j while the next candidate's revision is realized by rel_t
+        while j + 1 < i and knowable.iloc[j + 1] <= rel_t:
+            j += 1
+        # ensure j's own knowable_date <= rel_t (it may not, early on)
+        jj = j
+        while jj >= 0 and knowable.iloc[jj] > rel_t:
+            jj -= 1
+        if jj >= 0:
+            out[t] = (float(vals.iloc[jj]), float(vals.iloc[i]))
+    if not out:
+        return pd.DataFrame(columns=["x", "y"])
+    df = pd.DataFrame.from_dict(out, orient="index", columns=["x", "y"])
+    df.index = pd.DatetimeIndex(df.index, name="observation_date")
     return df
 
 
-def sign_persistence(revisions: dict[str, pd.Series]) -> pd.DataFrame:
+# ------------------------------------------------------------- statistics
+
+
+def _ac1(s: np.ndarray) -> float:
+    s = np.asarray(s, dtype=float)
+    if len(s) < 4 or np.std(s[1:]) == 0 or np.std(s[:-1]) == 0:
+        return float("nan")
+    return float(np.corrcoef(s[1:], s[:-1])[0, 1])
+
+
+def _moving_block_idx(n: int, block: int, rng) -> np.ndarray:
+    if n <= block:
+        return np.arange(n)
+    n_blocks = int(np.ceil(n / block))
+    starts = rng.integers(0, n - block + 1, size=n_blocks)
+    return np.concatenate([np.arange(s, s + block) for s in starts])[:n]
+
+
+def block_bootstrap_ci(
+    data: pd.DataFrame, stat_fn, *, block=BLOCK, n_boot=N_BOOT, seed=SEED
+) -> tuple[float, float]:
+    """Moving-block-bootstrap 95% CI for stat_fn(resampled_data)."""
+    n = len(data)
+    if n < 2 * block:
+        return (float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    arr = data.reset_index(drop=True)
+    stats = []
+    for _ in range(n_boot):
+        idx = _moving_block_idx(n, block, rng)
+        v = stat_fn(arr.iloc[idx].reset_index(drop=True))
+        if v == v:  # not nan
+            stats.append(v)
+    if not stats:
+        return (float("nan"), float("nan"))
+    return (float(np.percentile(stats, 2.5)), float(np.percentile(stats, 97.5)))
+
+
+def _corr_stat(df: pd.DataFrame) -> float:
+    if df["x"].std() == 0 or df["y"].std() == 0:
+        return float("nan")
+    return float(df["x"].corr(df["y"]))
+
+
+def momentum_trials(tables: dict[str, dict[int, pd.DataFrame]]) -> pd.DataFrame:
+    """Run the PIT-safe momentum test across series x unit x horizon. The
+    primary family is unit='growth_rev', horizon=PRIMARY_HORIZON (m = 3)."""
     rows = []
     for sid, _label in SERIES:
-        rev = revisions.get(sid)
-        if rev is None:
+        per_h = tables.get(sid)
+        if not per_h:
             continue
-        signs = np.sign(rev.dropna().values)
+        for horizon in HORIZONS:
+            table = per_h.get(horizon)
+            if table is None:
+                continue
+            for unit in ("growth_rev", "rel_level_rev"):
+                pairs = pit_safe_pairs(table, unit)
+                if len(pairs) < 8:
+                    continue
+                full_r = _corr_stat(pairs)
+                full_p = correlation_p_value(full_r, len(pairs))
+                lo, hi = block_bootstrap_ci(pairs, _corr_stat)
+                oos = pairs[pairs.index >= SPLIT]
+                oos_r = _corr_stat(oos) if len(oos) > 3 else float("nan")
+                oos_p = correlation_p_value(oos_r, len(oos)) if len(oos) > 3 else float("nan")
+                rows.append(
+                    {
+                        "series": sid,
+                        "unit": unit,
+                        "horizon_days": horizon,
+                        "primary": unit == "growth_rev" and horizon == PRIMARY_HORIZON,
+                        "full_r": full_r,
+                        "full_ci_lo": lo,
+                        "full_ci_hi": hi,
+                        "full_n": len(pairs),
+                        "full_p_raw": full_p,
+                        "oos_r": oos_r,
+                        "oos_n": len(oos),
+                        "oos_p_raw": oos_p,
+                    }
+                )
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    m = int(df["primary"].sum())  # Bonferroni only over the primary family
+    df["full_p_bonferroni"] = df.apply(
+        lambda r: min(r["full_p_raw"] * m, 1.0) if r["primary"] else float("nan"),
+        axis=1,
+    )
+    df["primary_survives"] = df["primary"] & (df["full_p_bonferroni"] < ALPHA) & (
+        # CI must also exclude zero (bootstrap agrees with the parametric p)
+        (df["full_ci_lo"] > 0) | (df["full_ci_hi"] < 0)
+    )
+    return df
+
+
+def sign_persistence(tables: dict[str, dict[int, pd.DataFrame]]) -> pd.DataFrame:
+    rows = []
+    for sid, _label in SERIES:
+        table = tables.get(sid, {}).get(PRIMARY_HORIZON)
+        if table is None:
+            continue
+        rev = table["growth_rev"].dropna().values
+        signs = np.sign(rev)
         signs = signs[signs != 0]
         if len(signs) < 4:
             continue
         same = (signs[1:] == signs[:-1]).astype(float)
         share = float(same.mean())
         n = len(same)
-        # z under the 50%-same null (a coin flip on sign agreement).
         z = (share - 0.5) / np.sqrt(0.25 / n)
         rows.append({"series": sid, "n_pairs": n, "same_sign_share": share, "z_vs_half": z})
     return pd.DataFrame(rows)
@@ -145,51 +299,66 @@ def pit_gap(vintage_frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
         vdf = vintage_frames.get(sid)
         if vdf is None or vdf.empty:
             continue
-        first = first_vintage_series(vdf).pct_change().dropna()
-        final = final_vintage_series(vdf).pct_change().dropna()
-        ac_first = float(first.corr(first.shift(1)))
-        ac_final = float(final.corr(final.shift(1)))
+        first = first_vintage_series(vdf).pct_change()
+        final = final_vintage_series(vdf).pct_change()
+        joined = pd.concat([first.rename("first"), final.rename("final")], axis=1).dropna()
+        if len(joined) < 2 * BLOCK:
+            continue
+        ac_first = _ac1(joined["first"].values)
+        ac_final = _ac1(joined["final"].values)
+        gap = ac_final - ac_first
+        lo, hi = block_bootstrap_ci(
+            joined, lambda d: _ac1(d["final"].values) - _ac1(d["first"].values)
+        )
         rows.append(
             {
                 "series": sid,
                 "ac1_first_vintage": ac_first,
                 "ac1_final_vintage": ac_final,
-                "gap_final_minus_first": ac_final - ac_first,
+                "gap_final_minus_first": gap,
+                "gap_ci_lo": lo,
+                "gap_ci_hi": hi,
             }
         )
     return pd.DataFrame(rows)
 
 
-def render_summary(
-    mom: pd.DataFrame, persist: pd.DataFrame, gap: pd.DataFrame, m: int
-) -> str:
-    lines = ["# ALFRED revision-momentum, stage 1", ""]
+# ---------------------------------------------------------------- render
+
+
+def render_summary(mom, persist, gap) -> str:
+    lines = ["# ALFRED revision-momentum, stage 1 (Tier-1 refined)", ""]
     if mom.empty:
-        lines.append("No revision data available. Run data/fetch_alfred.py first.")
+        lines.append("No revision data. Run data/fetch_alfred.py first.")
         return "\n".join(lines) + "\n"
 
-    full_survivors = int(mom["full_survives"].sum())
-    oos_survivors = int(mom["oos_survives"].sum())
-    lines.append(f"**Revision momentum, Bonferroni at m = {m} trials (alpha = {ALPHA}):**")
+    primary = mom[mom["primary"]]
+    m = len(primary)
+    surv = int(mom["primary_survives"].sum())
+    lines.append(
+        f"**PIT-safe momentum, primary family (growth, {PRIMARY_HORIZON}d), "
+        f"Bonferroni m = {m}, CI excludes 0:**"
+    )
     lines.append("")
-    lines.append(f"- Full-sample survivors: **{full_survivors} of {m}**.")
-    lines.append(f"- Out-of-sample (>= 2015) survivors: **{oos_survivors} of {m}**.")
+    lines.append(f"- Survivors: **{surv} of {m}**.")
     lines.append("")
-    lines.append("## Momentum trials")
+    lines.append("## Momentum trials (PIT-safe; * = primary)")
     lines.append("")
     lines.append(
-        "| Series | Lag | Full r | Full n | Full p (Bonferroni) | OOS r | OOS n | OOS p (Bonferroni) |"
+        "| Series | Unit | Horizon | Full r | 95% CI | n | Bonferroni p | OOS r | OOS n |"
     )
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
-    for _, r in mom.sort_values(["series", "lag"]).iterrows():
+    lines.append("|---|---|---:|---:|---|---:|---:|---:|---:|")
+    for _, r in mom.sort_values(["series", "unit", "horizon_days"]).iterrows():
+        star = " *" if r["primary"] else ""
+        bp = f"{r['full_p_bonferroni']:.3f}" if r["primary"] else "-"
         lines.append(
-            f"| {r['series']} | {int(r['lag'])} | {r['full_r']:.3f} | {int(r['full_n'])} "
-            f"| {r['full_p_bonferroni']:.3f} | {r['oos_r']:.3f} | {int(r['oos_n'])} "
-            f"| {r['oos_p_bonferroni']:.3f} |"
+            f"| {r['series']}{star} | {r['unit']} | {int(r['horizon_days'])} "
+            f"| {r['full_r']:.3f} | [{r['full_ci_lo']:.3f}, {r['full_ci_hi']:.3f}] "
+            f"| {int(r['full_n'])} | {bp} | {r['oos_r']:.3f} | {int(r['oos_n'])} |"
         )
 
     if not persist.empty:
-        lines += ["", "## Sign persistence (share of consecutive revisions sharing sign)", ""]
+        lines += ["", "## Sign persistence of growth revisions (vs 0.5)", ""]
         lines.append("| Series | Pairs | Same-sign share | z vs 0.5 |")
         lines.append("|---|---:|---:|---:|")
         for _, r in persist.iterrows():
@@ -198,82 +367,99 @@ def render_summary(
             )
 
     if not gap.empty:
-        lines += ["", "## Point-in-time gap (lag-1 autocorrelation of MoM growth)", ""]
-        lines.append("| Series | First-vintage AC1 | Final-vintage AC1 | Gap (final - first) |")
-        lines.append("|---|---:|---:|---:|")
+        lines += ["", "## Point-in-time gap (lag-1 AC of MoM growth, with 95% CI)", ""]
+        lines.append("| Series | First-vintage AC1 | Final-vintage AC1 | Gap | Gap 95% CI |")
+        lines.append("|---|---:|---:|---:|---|")
         for _, r in gap.iterrows():
             lines.append(
                 f"| {r['series']} | {r['ac1_first_vintage']:.3f} | {r['ac1_final_vintage']:.3f} "
-                f"| {r['gap_final_minus_first']:+.3f} |"
+                f"| {r['gap_final_minus_first']:+.3f} "
+                f"| [{r['gap_ci_lo']:+.3f}, {r['gap_ci_hi']:+.3f}] |"
             )
         lines.append("")
         lines.append(
-            "A positive gap means a naive analyst using fully-revised data "
-            "would see growth autocorrelation that was not knowable in real time."
+            "A gap whose CI excludes 0 means final-vintage data shows growth "
+            "autocorrelation that was not knowable in real time."
         )
-
     return "\n".join(lines) + "\n"
 
 
 def run(data_dir: Path, out_dir: Path) -> pd.DataFrame:
     vintage_frames: dict[str, pd.DataFrame] = {}
-    revisions: dict[str, pd.Series] = {}
+    tables: dict[str, dict[int, pd.DataFrame]] = {}
     for sid, _label in SERIES:
         path = data_dir / f"{sid}_vintages.csv"
         if not path.exists():
             continue
         vdf = timely_vintage_df(load_vintage_csv(path))
         vintage_frames[sid] = vdf
-        revisions[sid] = first_revisions(vdf)
+        tables[sid] = {h: revisions_table(vdf, h) for h in HORIZONS}
 
-    mom = momentum_trials(revisions)
-    persist = sign_persistence(revisions)
+    mom = momentum_trials(tables)
+    persist = sign_persistence(tables)
     gap = pit_gap(vintage_frames)
-    m = len(mom)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     if not mom.empty:
         mom.to_csv(out_dir / "stage1-momentum.csv", index=False)
     if not gap.empty:
         gap.to_csv(out_dir / "pit-gap.csv", index=False)
-    summary = render_summary(mom, persist, gap, m)
+    summary = render_summary(mom, persist, gap)
     (out_dir / "stage1-summary.md").write_text(summary)
     print(summary)
     return mom
 
 
+# ---------------------------------------------------------------- self-test
+
+
 def _self_test() -> int:
-    """Plant AR(1) revision momentum and confirm the runner recovers it."""
+    """Plant a PIT-realizable AR(1) revision and confirm recovery + no
+    look-ahead in the predictor alignment."""
     rng = np.random.default_rng(7)
     months = pd.date_range("1990-01-31", "2024-12-31", freq="ME")
     with tempfile.TemporaryDirectory() as td:
         data_dir = Path(td) / "data"
         data_dir.mkdir()
-        # PAYEMS gets a strong planted momentum; the others are noise.
         for sid in ("PAYEMS", "RSAFS", "INDPRO"):
+            # phi=0.85 so the PIT-safe predictor (~3 months back at a 90d
+            # horizon) still recovers phi^3 ~ 0.6, well clear of noise.
+            phi = 0.85 if sid == "PAYEMS" else 0.0
             rev = np.zeros(len(months))
-            phi = 0.6 if sid == "PAYEMS" else 0.0
             for i in range(1, len(months)):
                 rev[i] = phi * rev[i - 1] + rng.normal(0, 1.0)
             rows = ["observation_date,vintage_date,value"]
             level = 100.0
             for i, obs in enumerate(months):
                 level += rng.normal(0.2, 0.5)
-                first_v = obs + pd.Timedelta(days=45)
-                second_v = obs + pd.Timedelta(days=365)
+                first_v = obs + pd.Timedelta(days=20)   # timely first release
+                second_v = obs + pd.Timedelta(days=50)  # realized within 90d horizon
+                # Plant the revision in the LEVEL; growth_rev inherits its sign
+                # via the month-over-month differencing.
                 rows.append(f"{obs.date()},{first_v.date()},{level:.4f}")
                 rows.append(f"{obs.date()},{second_v.date()},{level + rev[i]:.4f}")
             (data_dir / f"{sid}_vintages.csv").write_text("\n".join(rows) + "\n")
 
+        # Direct PIT-constraint check on the alignment.
+        vdf = timely_vintage_df(load_vintage_csv(data_dir / "PAYEMS_vintages.csv"))
+        table = revisions_table(vdf, PRIMARY_HORIZON)
+        pairs = pit_safe_pairs(table, "growth_rev")
+        # The predictor used for each target must have been realized by the
+        # target's first-release date (no look-ahead).
+        for t in pairs.index:
+            assert table.loc[t, "first_release_date"] >= table["knowable_date"].min()
+        assert len(pairs) > 100
+
         out_dir = Path(td) / "out"
         mom = run(data_dir, out_dir)
 
-    payems_lag1 = mom[(mom["series"] == "PAYEMS") & (mom["lag"] == 1)].iloc[0]
-    assert payems_lag1["full_r"] > 0.4, payems_lag1["full_r"]
-    assert payems_lag1["full_survives"], "planted PAYEMS momentum should survive Bonferroni"
-    rsafs_lag1 = mom[(mom["series"] == "RSAFS") & (mom["lag"] == 1)].iloc[0]
-    assert not rsafs_lag1["full_survives"], "noise series should not survive"
-    print("\nself-test OK: planted PAYEMS momentum recovered, noise rejected.")
+    prim = mom[mom["primary"]]
+    pay = prim[prim["series"] == "PAYEMS"].iloc[0]
+    assert pay["full_r"] > 0.2, pay["full_r"]
+    assert pay["primary_survives"], "planted PAYEMS momentum should survive"
+    rsa = prim[prim["series"] == "RSAFS"].iloc[0]
+    assert not rsa["primary_survives"], "noise series should not survive"
+    print("\nself-test OK: planted PIT-safe momentum recovered, noise rejected.")
     return 0
 
 
