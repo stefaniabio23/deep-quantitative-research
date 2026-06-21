@@ -13,6 +13,9 @@ env/
 **/data/*.json
 **/data/*.parquet
 **/analysis/*.yaml
+# Exception: curated, human-authored event universes are study inputs, not
+# fetched data, so they are versioned (fetched prices/news stay ignored).
+!**/data/events_seed.csv
 **/synthesis/
 **/skeptic_review.yaml
 **/report.md

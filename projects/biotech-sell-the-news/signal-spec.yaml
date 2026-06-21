@@ -1,0 +1,105 @@
+signal_id: biotech-sell-the-news
+signal_name: "Sell-the-News Drift Around Biotech Clinical Catalysts"
+
+# Pre-registered BEFORE any data pull. A cross-sectional event study, not a
+# single time-series signal: the unit of observation is a (ticker, catalyst)
+# event. Rebuilds the LunarCrush sell-the-news work on captured public data.
+
+hypothesis:
+  statement: >
+    For single-asset biotech catalysts (Phase 2/3 readouts, PDUFA / FDA
+    decisions, pivotal conference presentations), the pre-event abnormal
+    run-up and the pre-event news/attention intensity predict NEGATIVE
+    post-event abnormal drift: the more a stock has run and the louder the
+    news into a readout, the more it underperforms in the days after,
+    largely independent of the catalyst outcome. This is the "sell the
+    news" effect, run-up and attention measure how priced-in the catalyst
+    already is, and priced-in catalysts disappoint on realization as
+    event-driven holders exit.
+  target_variable: post-event cumulative abnormal return, window [+2, +21] trading days
+  expected_direction: negative   # higher run-up / attention -> more negative post-drift
+
+# Event-level predictors and outcome.
+event_windows:
+  pre_runup_window: [-60, -2]      # trading days vs catalyst date
+  pre_news_window: [-30, -2]       # calendar days
+  reaction_window: [-1, +1]        # the event reaction itself (a control)
+  post_drift_window: [+2, +21]     # the sell-the-news outcome
+
+predictors:
+  - name: pre_runup
+    source: yfinance
+    definition: cumulative market-adjusted return over the pre_runup_window
+    expected_sign: negative
+  - name: pre_news_intensity
+    source: gdelt
+    definition: summed article volume over the pre_news_window (z-scored)
+    expected_sign: negative
+  - name: pre_news_tone
+    source: gdelt
+    definition: mean GDELT tone over the pre_news_window
+    expected_sign: undetermined
+  - name: event_reaction
+    source: yfinance
+    definition: cumulative abnormal return over reaction_window (control, not a predictor of interest)
+
+datasets:
+  # Referenced by datasources registry id; never duplicate metadata here.
+  - id: aact
+    role: catalyst-date source (studies.primary_completion_date, phase, sponsor)
+  - id: gdelt
+    role: pre-event news volume + tone per company (DOC API timelinevol/timelinetone)
+  - id: yfinance
+    role: ticker + XBI benchmark daily prices for abnormal returns
+
+benchmark:
+  ticker: XBI                      # SPDR S&P Biotech ETF, the sector market proxy
+  abnormal_return: market_adjusted # ret_ticker - ret_benchmark (beta=1 simplification)
+
+universe:
+  # v0 uses a curated seed of catalyst events (data/events_seed.csv). Full
+  # AACT sponsor->ticker mapping is a separate build; the seed is expandable.
+  selection: curated-seed
+  catalyst_types: [phase2_readout, phase3_readout, pdufa, conference]
+
+analysis:
+  method: cross-sectional
+  primary_test: >
+    OLS of post_drift on z(pre_runup), z(pre_news_intensity), and
+    event_reaction (control). Sell-the-news = significantly negative
+    coefficient on pre_runup (and pre_news_intensity), with a cross-sectional
+    bootstrap CI that excludes zero.
+  secondary:
+    - quintile sort of events by pre_runup; mean post_drift per quintile; Q5-Q1 spread
+    - directional consistency (DC): share of top-tercile run-up events with negative post-drift
+    - R: correlation of pre_runup with post_drift
+  multiple_testing: >
+    Record the number of window/spec combinations evaluated; the primary
+    windows above are pre-specified. Bonferroni / deflation applied if
+    multiple window choices are reported.
+
+validation:
+  out_of_sample_split: event date 2021-01-01   # early events train, later test
+  bootstrap: cross-sectional resample over events, 95% CI
+
+outputs:
+  signal_card: true
+  experiment_log: true
+
+caveats:
+  - >
+    Sponsor->ticker mapping is the binding feasibility constraint. AACT
+    sponsor names are messy; v0 relies on a curated, human-verified seed
+    universe rather than an automated crawl.
+  - >
+    Catalyst date precision: AACT primary_completion_date is an estimate
+    and is revised. Actual readout dates leak via press releases. The seed
+    records the best known event date; the AACT-estimated date is the
+    PIT-safe fallback and is itself a signal (amendment velocity).
+  - >
+    Survivorship bias: yfinance silently drops delisted tickers, which
+    biases an event study toward survivors. Failed-readout names that
+    delisted must be included from the seed, not back-filled from yfinance.
+  - >
+    GDELT covers global news from 2015; NewsAPI's free tier is recent-only
+    and is not used for the historical study.
