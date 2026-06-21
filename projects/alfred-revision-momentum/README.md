@@ -16,7 +16,7 @@ ignored flag into a measured effect, exercising the vintage primitives
 (`first_vintage_series`, `final_vintage_series`, `first_revisions`,
 `as_of_series`) end to end.
 
-## Verdict (run 2026-06-21, Tier-1 refined)
+## Verdict (run 2026-06-21, Tier-1 + Tier-2)
 
 Three monthly series (PAYEMS, RSAFS, INDPRO), ALFRED vintages, restricted
 to observations with a genuine timely first release. Revisions are
@@ -49,15 +49,39 @@ their direction well above chance. So the honest signal is the opposite of
 what the naive run reported, payrolls, not industrial production.
 
 The robust structural finding survives: the **industrial-production
-point-in-time gap**, now with a bootstrap CI that excludes zero. A naive
+point-in-time gap**, with a bootstrap CI that excludes zero. A naive
 analyst on fully-revised data sees a lag-1 growth autocorrelation of 0.50;
 only 0.22 was knowable in real time. Revised data more than **doubles** the
 apparent predictability. That gap, not a tradable signal, is the result: a
 quantified demonstration of why final-vintage backtests overstate what was
 forecastable.
 
+### Tier-2 robustness (the single-split verdict hid a regime)
+
+- **The payrolls momentum is a modern-era phenomenon, not a stable
+  all-history signal.** Across every OOS split from 2005 to 2020, the
+  pre-split (older) correlation is ~0.02 to 0.05 while the post-split
+  (recent) correlation is ~0.22 to 0.26. Subsample thirds confirm it:
+  r = 0.02 (1955-1979), -0.01 (1979-2002), **0.245 (2002-2026)**. Payroll
+  revision momentum is essentially absent before ~2002 and present after.
+  A plausible mechanism is the BLS net birth-death model, phased into the
+  establishment survey in 2001-2003, which changed how revisions accrue.
+  This reframes Tier-1's "holds out-of-sample" as "the signal lives in the
+  modern measurement regime."
+- **Sign persistence, done properly (Wald-Wolfowitz runs test, which does
+  not assume independent sign-agreements), still backs payrolls:**
+  PAYEMS runs z = -4.08 (p < 0.0001); RSAFS and INDPRO not significant.
+- **Industrial-production momentum is dead in every subsample and split**,
+  confirming the Tier-1 collapse was not a single-split artifact.
+- **The INDPRO point-in-time gap is robust in sign across all eras but its
+  magnitude has roughly halved recently:** +0.25 to +0.32 in the first two
+  thirds, +0.11 in 2002-2026. The qualitative lesson holds throughout; the
+  current-regime gap is smaller than the full-sample +0.279 implies.
+
 The pre-registration lives in `signal-spec.yaml`. Re-run with a
-`FRED_API_KEY` and diff your output against `expected-output/`.
+`FRED_API_KEY` and diff your output against `expected-output/`. Tier-2
+artifacts: `stage1-oos-sensitivity.csv`, `stage1-subsample-stability.csv`,
+`stage1-sign-persistence.csv`.
 
 ## Method
 

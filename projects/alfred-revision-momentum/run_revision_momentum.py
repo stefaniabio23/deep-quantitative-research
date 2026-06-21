@@ -38,6 +38,7 @@ no network or FRED key required.
 
 from __future__ import annotations
 
+import math
 import sys
 import tempfile
 from pathlib import Path
@@ -75,6 +76,10 @@ HORIZONS = (90, 365)
 BLOCK = 12
 N_BOOT = 2000
 SEED = 12345
+# Tier-2 robustness knobs.
+OOS_SPLITS = ("2005-01-01", "2008-01-01", "2010-01-01", "2012-01-01",
+              "2015-01-01", "2018-01-01", "2020-01-01")
+N_SUBSAMPLES = 3  # disjoint time-thirds for stability checks
 
 
 # ---------------------------------------------------------------- helpers
@@ -274,23 +279,140 @@ def momentum_trials(tables: dict[str, dict[int, pd.DataFrame]]) -> pd.DataFrame:
     return df
 
 
+def _normal_p_two_sided(z: float) -> float:
+    if z != z:
+        return float("nan")
+    return float(2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z) / math.sqrt(2.0)))))
+
+
+def runs_test(signs: np.ndarray) -> tuple[int, float, float, float]:
+    """Wald-Wolfowitz runs test. Returns (runs, expected_runs, z, p). Fewer
+    runs than expected (negative z) means same-sign clustering, i.e.
+    directional persistence. This replaces the naive 'share vs 0.5' z, which
+    assumed consecutive sign-agreements were independent."""
+    signs = np.asarray(signs)
+    signs = signs[signs != 0]
+    n = len(signs)
+    n1 = int((signs > 0).sum())
+    n2 = int((signs < 0).sum())
+    if n1 == 0 or n2 == 0 or n < 4:
+        return (0, float("nan"), float("nan"), float("nan"))
+    runs = 1 + int((signs[1:] != signs[:-1]).sum())
+    exp = 2.0 * n1 * n2 / n + 1.0
+    var = 2.0 * n1 * n2 * (2.0 * n1 * n2 - n) / (n * n * (n - 1))
+    if var <= 0:
+        return (runs, exp, float("nan"), float("nan"))
+    z = (runs - exp) / math.sqrt(var)
+    return (runs, exp, z, _normal_p_two_sided(z))
+
+
+def _share_stat(df: pd.DataFrame) -> float:
+    return float(df["same"].mean())
+
+
 def sign_persistence(tables: dict[str, dict[int, pd.DataFrame]]) -> pd.DataFrame:
     rows = []
     for sid, _label in SERIES:
         table = tables.get(sid, {}).get(PRIMARY_HORIZON)
         if table is None:
             continue
-        rev = table["growth_rev"].dropna().values
-        signs = np.sign(rev)
+        signs = np.sign(table["growth_rev"].dropna().values)
         signs = signs[signs != 0]
-        if len(signs) < 4:
+        if len(signs) < 2 * BLOCK:
             continue
         same = (signs[1:] == signs[:-1]).astype(float)
-        share = float(same.mean())
-        n = len(same)
-        z = (share - 0.5) / np.sqrt(0.25 / n)
-        rows.append({"series": sid, "n_pairs": n, "same_sign_share": share, "z_vs_half": z})
+        lo, hi = block_bootstrap_ci(pd.DataFrame({"same": same}), _share_stat)
+        runs, exp_runs, z_runs, p_runs = runs_test(signs)
+        rows.append(
+            {
+                "series": sid,
+                "n_pairs": len(same),
+                "same_sign_share": float(same.mean()),
+                "share_ci_lo": lo,
+                "share_ci_hi": hi,
+                "runs": runs,
+                "expected_runs": exp_runs,
+                "runs_z": z_runs,
+                "runs_p": p_runs,
+            }
+        )
     return pd.DataFrame(rows)
+
+
+def oos_sensitivity(tables: dict[str, dict[int, pd.DataFrame]]) -> pd.DataFrame:
+    """Train/test correlation of the primary momentum across many split dates,
+    to check the verdict does not hinge on the single 2015 cut."""
+    rows = []
+    for sid, _label in SERIES:
+        table = tables.get(sid, {}).get(PRIMARY_HORIZON)
+        if table is None:
+            continue
+        pairs = pit_safe_pairs(table, "growth_rev")
+        if len(pairs) < 2 * BLOCK:
+            continue
+        for split in OOS_SPLITS:
+            s = pd.Timestamp(split)
+            tr = pairs[pairs.index < s]
+            te = pairs[pairs.index >= s]
+            rows.append(
+                {
+                    "series": sid,
+                    "split": split,
+                    "train_r": _corr_stat(tr) if len(tr) > 3 else float("nan"),
+                    "train_n": len(tr),
+                    "test_r": _corr_stat(te) if len(te) > 3 else float("nan"),
+                    "test_n": len(te),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def subsample_stability(
+    tables: dict[str, dict[int, pd.DataFrame]],
+    vintage_frames: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Recompute the primary momentum and the PIT gap on disjoint time-thirds,
+    to check neither headline is driven by one era (crisis/COVID revisions or
+    a methodology-change window)."""
+    rows = []
+    for sid, _label in SERIES:
+        table = tables.get(sid, {}).get(PRIMARY_HORIZON)
+        if table is not None:
+            pairs = pit_safe_pairs(table, "growth_rev").sort_index()
+            for k, ch in enumerate(np.array_split(np.arange(len(pairs)), N_SUBSAMPLES)):
+                sub = pairs.iloc[ch]
+                rows.append(_stability_row(sid, "momentum_r", k, sub,
+                                           _corr_stat(sub) if len(sub) > 3 else float("nan")))
+        vdf = vintage_frames.get(sid)
+        if vdf is not None and not vdf.empty:
+            first = first_vintage_series(vdf).pct_change()
+            final = final_vintage_series(vdf).pct_change()
+            joined = pd.concat(
+                [first.rename("first"), final.rename("final")], axis=1
+            ).dropna().sort_index()
+            for k, ch in enumerate(np.array_split(np.arange(len(joined)), N_SUBSAMPLES)):
+                sub = joined.iloc[ch]
+                gap = (
+                    _ac1(sub["final"].values) - _ac1(sub["first"].values)
+                    if len(sub) > 4
+                    else float("nan")
+                )
+                rows.append(_stability_row(sid, "pit_gap", k, sub, gap))
+    return pd.DataFrame(rows)
+
+
+def _stability_row(sid, metric, k, sub, value):
+    period = (
+        f"{sub.index.min().date()}..{sub.index.max().date()}" if len(sub) else ""
+    )
+    return {
+        "series": sid,
+        "metric": metric,
+        "subsample": k + 1,
+        "period": period,
+        "value": value,
+        "n": len(sub),
+    }
 
 
 def pit_gap(vintage_frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -326,8 +448,8 @@ def pit_gap(vintage_frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
 # ---------------------------------------------------------------- render
 
 
-def render_summary(mom, persist, gap) -> str:
-    lines = ["# ALFRED revision-momentum, stage 1 (Tier-1 refined)", ""]
+def render_summary(mom, persist, gap, oos, stability) -> str:
+    lines = ["# ALFRED revision-momentum, stage 1 (Tier-1 + Tier-2)", ""]
     if mom.empty:
         lines.append("No revision data. Run data/fetch_alfred.py first.")
         return "\n".join(lines) + "\n"
@@ -358,12 +480,39 @@ def render_summary(mom, persist, gap) -> str:
         )
 
     if not persist.empty:
-        lines += ["", "## Sign persistence of growth revisions (vs 0.5)", ""]
-        lines.append("| Series | Pairs | Same-sign share | z vs 0.5 |")
-        lines.append("|---|---:|---:|---:|")
+        lines += ["", "## Sign persistence of growth revisions (Wald-Wolfowitz runs test)", ""]
+        lines.append(
+            "Negative runs-z = fewer runs than chance = same-sign clustering "
+            "(directional persistence)."
+        )
+        lines.append("")
+        lines.append("| Series | Pairs | Same-sign share | Share 95% CI | Runs z | Runs p |")
+        lines.append("|---|---:|---:|---|---:|---:|")
         for _, r in persist.iterrows():
             lines.append(
-                f"| {r['series']} | {int(r['n_pairs'])} | {r['same_sign_share']:.3f} | {r['z_vs_half']:.2f} |"
+                f"| {r['series']} | {int(r['n_pairs'])} | {r['same_sign_share']:.3f} "
+                f"| [{r['share_ci_lo']:.3f}, {r['share_ci_hi']:.3f}] "
+                f"| {r['runs_z']:.2f} | {r['runs_p']:.4f} |"
+            )
+
+    if not oos.empty:
+        lines += ["", "## OOS-split sensitivity (primary momentum, train/test r by split)", ""]
+        lines.append("| Series | Split | Train r | Train n | Test r | Test n |")
+        lines.append("|---|---|---:|---:|---:|---:|")
+        for _, r in oos.iterrows():
+            lines.append(
+                f"| {r['series']} | {r['split']} | {r['train_r']:.3f} | {int(r['train_n'])} "
+                f"| {r['test_r']:.3f} | {int(r['test_n'])} |"
+            )
+
+    if not stability.empty:
+        lines += ["", "## Subsample stability (disjoint time-thirds)", ""]
+        lines.append("| Series | Metric | Third | Period | Value | n |")
+        lines.append("|---|---|---:|---|---:|---:|")
+        for _, r in stability.iterrows():
+            lines.append(
+                f"| {r['series']} | {r['metric']} | {int(r['subsample'])} | {r['period']} "
+                f"| {r['value']:.3f} | {int(r['n'])} |"
             )
 
     if not gap.empty:
@@ -398,13 +547,21 @@ def run(data_dir: Path, out_dir: Path) -> pd.DataFrame:
     mom = momentum_trials(tables)
     persist = sign_persistence(tables)
     gap = pit_gap(vintage_frames)
+    oos = oos_sensitivity(tables)
+    stability = subsample_stability(tables, vintage_frames)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     if not mom.empty:
         mom.to_csv(out_dir / "stage1-momentum.csv", index=False)
     if not gap.empty:
         gap.to_csv(out_dir / "pit-gap.csv", index=False)
-    summary = render_summary(mom, persist, gap)
+    if not persist.empty:
+        persist.to_csv(out_dir / "stage1-sign-persistence.csv", index=False)
+    if not oos.empty:
+        oos.to_csv(out_dir / "stage1-oos-sensitivity.csv", index=False)
+    if not stability.empty:
+        stability.to_csv(out_dir / "stage1-subsample-stability.csv", index=False)
+    summary = render_summary(mom, persist, gap, oos, stability)
     (out_dir / "stage1-summary.md").write_text(summary)
     print(summary)
     return mom
