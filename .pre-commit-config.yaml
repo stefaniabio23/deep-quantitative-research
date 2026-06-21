@@ -1,0 +1,9 @@
+# Secret-scanning backstop. Runs gitleaks on staged changes before every
+# commit so an API key cannot be committed by an accidental `git add -A`.
+# Install once per clone:  pre-commit install
+# Update pins:             pre-commit autoupdate
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
