@@ -86,12 +86,26 @@ N_SUBSAMPLES = 3  # disjoint time-thirds for stability checks
 
 
 def timely_vintage_df(
-    vdf: pd.DataFrame, max_lag_days: int = MAX_FIRST_RELEASE_LAG_DAYS
+    vdf: pd.DataFrame, max_lag_days: int | None = None
 ) -> pd.DataFrame:
-    """Restrict to observations with a genuine (timely) first release."""
+    """Restrict to observations with a genuine (timely) first release.
+
+    The release lag scales with cadence: a monthly series is first published
+    ~1 month after the period, a quarterly series (GDP) ~4 months after the
+    quarter starts. So the threshold is cadence-aware (median spacing + 100
+    days) rather than a fixed 92. Archive artifacts (first vintage decades
+    late) sit far above any such threshold, so this cleanly separates them.
+    """
     if vdf.empty:
         return vdf
     first_v = vdf.groupby("observation_date")["vintage_date"].min()
+    if max_lag_days is None:
+        obs = first_v.index.sort_values().values
+        if len(obs) > 2:
+            spacing = int(np.median(np.diff(obs).astype("timedelta64[D]").astype(int)))
+        else:
+            spacing = 31
+        max_lag_days = max(MAX_FIRST_RELEASE_LAG_DAYS, spacing + 100)
     lag_days = (first_v - first_v.index.to_series()).dt.days
     keep = set(lag_days[lag_days <= max_lag_days].index)
     return vdf[vdf["observation_date"].isin(keep)]
