@@ -62,8 +62,15 @@ def _load_api_key() -> str:
 
 
 def _get(params: dict[str, str]) -> dict:
-    for attempt in range(4):
-        resp = requests.get(BASE, params=params, timeout=30)
+    # Full-history vintage pulls (output_type=3) can be large and slow for
+    # heavily-revised series, so use a generous timeout and retry on
+    # transient network errors as well as rate limits.
+    for attempt in range(5):
+        try:
+            resp = requests.get(BASE, params=params, timeout=120)
+        except (requests.Timeout, requests.ConnectionError):
+            time.sleep(2 ** attempt)
+            continue
         if resp.status_code == 200:
             return resp.json()
         if resp.status_code == 429:  # rate limited; back off
@@ -73,11 +80,19 @@ def _get(params: dict[str, str]) -> dict:
             f"FRED request failed ({resp.status_code}) for "
             f"{params.get('series_id')}: {resp.text[:200]}"
         )
-    raise SystemExit("FRED request failed after retries (rate limit).")
+    raise SystemExit(
+        f"FRED request for {params.get('series_id')} failed after retries "
+        "(timeout or rate limit)."
+    )
 
 
 def fetch_vintages(series_id: str, api_key: str) -> int:
     """Fetch the full revision history; write <series_id>_vintages.csv."""
+    out = HERE / f"{series_id}_vintages.csv"
+    if out.exists():  # cache: resume partial fetches without refetching
+        n = sum(1 for _ in out.open()) - 1
+        print(f"  {series_id}: cached ({n} rows) -> {out.name}")
+        return n
     data = _get(
         {
             "series_id": series_id,
@@ -88,17 +103,25 @@ def fetch_vintages(series_id: str, api_key: str) -> int:
             "realtime_end": WIDE_END,
         }
     )
+    # output_type=3 returns a WIDE matrix: one row per observation date, with
+    # a column named "<SERIES>_<YYYYMMDD>" for each vintage on which the value
+    # was new or revised. Melt it into long (observation_date, vintage_date,
+    # value) rows, which is the change-point history per observation.
+    prefix = f"{series_id}_"
     rows = []
     for obs in data.get("observations", []):
-        value = obs.get("value", ".")
-        if value in (".", "", None):  # FRED's missing-value sentinel
-            continue
-        rows.append(
-            (obs["date"], obs["realtime_start"], value)
-        )
+        obs_date = obs["date"]
+        for col, value in obs.items():
+            if not col.startswith(prefix):
+                continue
+            if value in (".", "", None):  # FRED's missing-value sentinel
+                continue
+            v = col[len(prefix):]  # YYYYMMDD
+            vintage_date = f"{v[:4]}-{v[4:6]}-{v[6:8]}"
+            rows.append((obs_date, vintage_date, value))
+    rows.sort()  # by (observation_date, vintage_date)
     if not rows:
         raise SystemExit(f"{series_id}: no observations returned.")
-    out = HERE / f"{series_id}_vintages.csv"
     lines = ["observation_date,vintage_date,value"]
     lines += [f"{obs},{vint},{val}" for obs, vint, val in rows]
     out.write_text("\n".join(lines) + "\n")
@@ -108,6 +131,11 @@ def fetch_vintages(series_id: str, api_key: str) -> int:
 
 def fetch_current(series_id: str, api_key: str) -> int:
     """Fetch the current (latest-vintage) series; write <series_id>.csv."""
+    out = HERE / f"{series_id}.csv"
+    if out.exists():  # cache: resume partial fetches without refetching
+        n = sum(1 for _ in out.open()) - 1
+        print(f"  {series_id}: cached ({n} rows) -> {out.name}")
+        return n
     data = _get(
         {
             "series_id": series_id,
@@ -122,7 +150,6 @@ def fetch_current(series_id: str, api_key: str) -> int:
     ]
     if not rows:
         raise SystemExit(f"{series_id}: no observations returned.")
-    out = HERE / f"{series_id}.csv"
     lines = ["date,value"] + [f"{d},{v}" for d, v in rows]
     out.write_text("\n".join(lines) + "\n")
     print(f"  {series_id}: {len(rows)} rows -> {out.name}")

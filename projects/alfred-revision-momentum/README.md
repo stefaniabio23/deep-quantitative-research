@@ -16,35 +16,55 @@ ignored flag into a measured effect, exercising the vintage primitives
 (`first_vintage_series`, `final_vintage_series`, `first_revisions`,
 `as_of_series`) end to end.
 
-## Verdict
+## Verdict (run 2026-06-21)
 
-Pending the live ALFRED fetch (needs a free `FRED_API_KEY`; see Run).
-The analysis machinery is verified against a synthetic planted signal,
-see "Verification" below. No real-data numbers are committed until the
-fetch runs, so this table is a placeholder, not a result:
+Three monthly series (PAYEMS, RSAFS, INDPRO), ALFRED vintages, restricted
+to observations with a genuine timely first release. Full artifacts in
+`expected-output/`.
 
-| Stage | Question | Status |
+| Stage | Question | Result |
 |---|---|---|
-| 1a | Does revision_t correlate with revision_{t-k}? (Bonferroni, m = 9) | pending fetch |
-| 1b | Final-vintage growth autocorrelation minus first-vintage (the PIT gap) | pending fetch |
-| 2  | Does revision direction predict the Treasury-yield move around release? | pre-registered, not run |
+| 1a momentum | revision_t vs revision_{t-k}, Bonferroni m = 9 | **3/9 survive full-sample (all INDPRO, lags 1-3); 0/9 out-of-sample (>= 2015)** |
+| 1a sign-persistence | do consecutive revisions share sign? | **PAYEMS z = 3.84, INDPRO z = 4.70 (both significant); RSAFS not** |
+| 1b PIT gap | final-vintage minus first-vintage growth autocorrelation | **INDPRO +0.279 (0.225 to 0.504); PAYEMS +0.006; RSAFS +0.039** |
+| 2  | revision direction predicts the Treasury-yield move? | pre-registered, not run |
 
-The pre-registration lives in `signal-spec.yaml`. Re-run and diff your
-output against `expected-output/` once it is populated.
+**Read.** Revision momentum is real but concentrated and fragile. Only
+industrial production shows a strong magnitude correlation between
+successive revisions, and even that does not survive out-of-sample after
+2015. Direction is more persistent than magnitude: payrolls and
+industrial-production revisions repeat their sign well above chance, even
+where the size correlation is weak.
+
+The robust finding is the point-in-time gap, and it is the methodology
+made flesh. For industrial production, a naive analyst downloading
+fully-revised data sees a lag-1 growth autocorrelation of 0.50; only 0.22
+of that was knowable in real time. The revised series nearly **doubles**
+the apparent predictability. That gap, not a tradable signal, is the
+result: it is a clean, quantified demonstration of why backtests on
+final-vintage data overstate what was actually forecastable. The signal
+many would "discover" in industrial production is mostly an artifact of
+looking at restated numbers.
+
+The pre-registration lives in `signal-spec.yaml`. Re-run with a
+`FRED_API_KEY` and diff your output against `expected-output/`.
 
 ## Method
 
 Stage 1 uses ALFRED only and is fully self-contained:
 
 1. **Fetch.** `data/fetch_alfred.py` pulls each series with FRED's
-   `output_type=3` (new and revised observations only), which returns
-   the full revision history in one call, tagged by the vintage date
-   each value took effect. It lands as a long CSV with columns
-   `observation_date, vintage_date, value`.
-2. **Reconstruct.** `first_vintage_series` gives the real-time initial
-   release; `final_vintage_series` gives today's fully-revised value;
-   `first_revisions` gives the signed second-minus-first revision per
-   observation.
+   `output_type=3` (new and revised observations only), one call per
+   series. FRED returns a wide matrix (one row per observation, a column
+   per vintage on which the value changed); the fetcher melts it into a
+   long CSV with columns `observation_date, vintage_date, value`.
+2. **Reconstruct.** Observations are first restricted to those with a
+   genuine timely first release (first vintage within ~one quarter of the
+   observation date), dropping early observations whose earliest archived
+   vintage is decades late. Then `first_vintage_series` gives the
+   real-time initial release; `final_vintage_series` gives today's
+   fully-revised value; `first_revisions` gives the signed
+   second-minus-first revision per observation.
 3. **Momentum test.** For each series and lag k in {1,2,3}, correlate
    revision_t against revision_{t-k}. Bonferroni over the m = 3 x 3 = 9
    family, with an out-of-sample split at 2015-01-01. A sign-persistence

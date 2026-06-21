@@ -56,6 +56,24 @@ LAGS = (1, 2, 3)
 # Out-of-sample split: revisions observed from 2015 on are the OOS set.
 SPLIT = pd.Timestamp("2015-01-01")
 ALPHA = 0.05
+# ALFRED vintage archives start decades after some series begin. For
+# observations predating real-time coverage, the earliest archived vintage
+# is not the genuine initial release, so its "first revision" is an artifact.
+# Keep only observations whose first vintage lands within ~one quarter of the
+# observation date (a real initial print we actually caught).
+MAX_FIRST_RELEASE_LAG_DAYS = 92
+
+
+def timely_vintage_df(
+    vdf: pd.DataFrame, max_lag_days: int = MAX_FIRST_RELEASE_LAG_DAYS
+) -> pd.DataFrame:
+    """Restrict to observations with a genuine (timely) first release."""
+    if vdf.empty:
+        return vdf
+    first_v = vdf.groupby("observation_date")["vintage_date"].min()
+    lag_days = (first_v - first_v.index.to_series()).dt.days
+    keep = set(lag_days[lag_days <= max_lag_days].index)
+    return vdf[vdf["observation_date"].isin(keep)]
 
 
 def _corr(joined: pd.DataFrame) -> tuple[float, float, int]:
@@ -204,7 +222,7 @@ def run(data_dir: Path, out_dir: Path) -> pd.DataFrame:
         path = data_dir / f"{sid}_vintages.csv"
         if not path.exists():
             continue
-        vdf = load_vintage_csv(path)
+        vdf = timely_vintage_df(load_vintage_csv(path))
         vintage_frames[sid] = vdf
         revisions[sid] = first_revisions(vdf)
 
