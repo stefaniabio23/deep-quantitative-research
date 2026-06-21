@@ -30,9 +30,21 @@ def _timeline(query: str, mode: str) -> pd.DataFrame:
         "format": "json",
         "timespan": "10y",  # GDELT max history for the DOC API
     }
-    r = requests.get(DOC, params=params, timeout=60)
-    r.raise_for_status()
-    data = r.json()
+    data = None
+    for attempt in range(5):
+        r = requests.get(DOC, params=params, timeout=60)
+        if r.status_code == 429:  # GDELT rate-limits aggressively; back off
+            time.sleep(3 * (attempt + 1))
+            continue
+        if r.status_code != 200:
+            return pd.DataFrame(columns=["date", "value"])  # graceful skip
+        try:
+            data = r.json()
+        except ValueError:
+            return pd.DataFrame(columns=["date", "value"])
+        break
+    if data is None:
+        return pd.DataFrame(columns=["date", "value"])
     series = data.get("timeline", [])
     if not series:
         return pd.DataFrame(columns=["date", "value"])

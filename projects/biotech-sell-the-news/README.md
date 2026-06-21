@@ -17,16 +17,37 @@ binary event is, which is what determines whether good news still sells off.
 
 ## Verdict
 
-Pending a populated event universe and the live fetch. The analysis is
-verified against a synthetic planted effect (see Verification). No
-real-data numbers are committed until `data/events_seed.csv` holds real
-catalysts and `./run.sh` has run.
+Starter run on an 18-event verified seed (run 2026-06-21). **Result:
+not confirmed on this sample, and the run is dominated by survivorship
+bias**, which is the finding.
 
-| Test | Question | Status |
-|---|---|---|
-| Primary | Is the pre-run-up coefficient on post-drift negative (CI excludes 0)? | pending data |
-| Secondary | Q5-Q1 post-drift spread, directional consistency, R | pending data |
-| OOS | Does it hold for events from 2021 on? | pending data |
+| Test | Result |
+|---|---|
+| Events analyzed | **12 of 18** seeded (6 dropped, see below) |
+| Primary: pre-run-up coefficient on post-drift | **-0.044, 95% CI [-0.104, +0.036]** — sell-the-news direction, but CI includes 0 |
+| Directional consistency (top-tercile down) | 0.500 (a coin flip) |
+| R(run-up, post-drift) | -0.094 |
+| pre-news coefficient | not used (GDELT rate-limited; news coverage < 50%) |
+
+**Read.** On the survivors, the run-up coefficient leans the right way
+(negative = sell-the-news) but is statistically indistinguishable from
+zero on n = 12. The dominant effect is the **data-availability bias the
+spec pre-registered**: 6 of 18 events dropped, and the dropouts are not
+random.
+
+- **5 acquired/delisted names vanish from yfinance:** ITCI (acquired by
+  J&J), KRTX (BMS), ICPT (Alfasigma), SAGE (Supernus), AKRO. Acquired
+  *winners* and delisted *failures* both disappear, biasing the sample.
+- **1 ticker collision:** `AXON` today is Axon Enterprise (the Taser
+  company), not Axovant Sciences (the 2017 Alzheimer's failure). yfinance
+  silently returned the wrong company; the event was removed.
+
+This is the project's own caveat made flesh, and the real lesson of the
+starter run: a credible version needs a survivorship-clean, point-in-time
+price source (delisted tickers included), not yfinance. The methodology is
+verified (self-test); the verdict here is **illustrative and underpowered**,
+not a finding. Re-run after expanding the universe and adding a clean price
+source.
 
 ## Method
 

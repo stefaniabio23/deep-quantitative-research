@@ -12,6 +12,8 @@ env/
 **/data/*.csv
 **/data/*.json
 **/data/*.parquet
+# nested fetched data (e.g. data/prices/, data/news/)
+**/data/**/*.csv
 **/analysis/*.yaml
 # Exception: curated, human-authored event universes are study inputs, not
 # fetched data, so they are versioned (fetched prices/news stay ignored).
