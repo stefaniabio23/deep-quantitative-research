@@ -1,0 +1,4 @@
+corpus_name,resolve_as,manual_moa,manual_target,manual_modality,note
+KarXT,xanomeline,,,,combination (xanomeline-trospium); xanomeline is the primary active
+AXS-05,dextromethorphan,,,,combination (dextromethorphan-bupropion); dextromethorphan is the primary active
+VK2735,,gip/glp-1 dual agonist,GIPR/GLP1R,peptide,investigational research code; not yet in ChEMBL

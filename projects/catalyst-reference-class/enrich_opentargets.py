@@ -32,6 +32,7 @@ import requests
 
 HERE = Path(__file__).parent
 CORPUS = HERE / "catalysts.csv"
+ALIASES = HERE / "drug_aliases.csv"
 OUT_DIR = HERE / "expected-output"
 OT_API = "https://api.platform.opentargets.org/api/v4/graphql"
 
@@ -111,24 +112,50 @@ def parse_drug(drug: dict) -> dict:
     }
 
 
-def enrich_one(name: str) -> dict:
+def load_aliases(path: Path = ALIASES) -> dict:
+    """corpus_name (lower) -> {resolve_as, manual_moa, manual_target, manual_modality}."""
+    if not path.exists():
+        return {}
+    df = pd.read_csv(path).fillna("")
+    return {str(r["corpus_name"]).lower(): r.to_dict() for _, r in df.iterrows()}
+
+
+def enrich_one(name: str, aliases: dict | None = None) -> dict:
+    aliases = aliases or {}
+    # 1. direct name resolution
     cid = resolve_chembl(name)
-    if not cid:
-        return {"resolved": False}
-    parsed = parse_drug(fetch_drug(cid))
-    return {"resolved": bool(parsed), "chembl_id": cid, **parsed}
+    if cid:
+        return {"resolved": True, "path": "direct", "chembl_id": cid, **parse_drug(fetch_drug(cid))}
+    a = aliases.get(name.lower())
+    if a:
+        # 2. synonym / INN re-resolution (e.g. KarXT -> xanomeline)
+        if a.get("resolve_as"):
+            cid = resolve_chembl(a["resolve_as"])
+            if cid:
+                return {"resolved": True, "path": "alias", "alias_used": a["resolve_as"],
+                        "chembl_id": cid, **parse_drug(fetch_drug(cid))}
+        # 3. manual override for compounds not in ChEMBL (e.g. VK2735)
+        if a.get("manual_moa"):
+            return {"resolved": True, "path": "manual", "chembl_id": "",
+                    "ot_name": "", "ot_moa": a["manual_moa"], "ot_action": "",
+                    "ot_target": a.get("manual_target", ""),
+                    "ot_modality": a.get("manual_modality", ""),
+                    "ot_drug_type": "", "ot_indications": ""}
+    return {"resolved": False, "path": "unresolved"}
 
 
 def validate(corpus_path: Path, out_dir: Path) -> dict:
     corpus = pd.read_csv(corpus_path).fillna("")
+    aliases = load_aliases()
     rows = []
     for _, c in corpus.iterrows():
-        e = enrich_one(str(c["drug"]))
+        e = enrich_one(str(c["drug"]), aliases)
         rows.append(
             {
                 "event_id": c["event_id"],
                 "drug": c["drug"],
                 "resolved": e.get("resolved", False),
+                "path": e.get("path", "unresolved"),
                 "chembl_id": e.get("chembl_id", ""),
                 "hand_moa": c["moa"],
                 "ot_moa": e.get("ot_moa", ""),
@@ -142,20 +169,28 @@ def validate(corpus_path: Path, out_dir: Path) -> dict:
         time.sleep(0.3)  # be polite to the API
     df = pd.DataFrame(rows)
     n, res = len(df), int(df["resolved"].sum())
+    by_path = df["path"].value_counts().to_dict()
     modality_agree = int(((df["resolved"]) & (df["hand_modality"] == df["ot_modality"])).sum())
 
     out_dir.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_dir / "enriched-corpus.csv", index=False)
 
-    L = ["# Open Targets enrichment coverage (v2 leg 1)", ""]
-    L.append(f"- Drug-name resolved to a ChEMBL molecule: **{res}/{n}** ({res/n:.0%}).")
+    L = ["# Open Targets enrichment coverage (v2 leg 1, with alias layer)", ""]
+    L.append(f"- Tagged: **{res}/{n}** ({res/n:.0%}).")
+    L.append(
+        f"- By path: direct (Open Targets) {by_path.get('direct', 0)}, "
+        f"alias / INN re-resolve {by_path.get('alias', 0)}, "
+        f"manual (not in ChEMBL) {by_path.get('manual', 0)}, "
+        f"unresolved {by_path.get('unresolved', 0)}."
+    )
     L.append(f"- Modality auto-match vs hand tag (of resolved): {modality_agree}/{res}.")
     L.append("")
-    L.append("Unresolved (the name-join coverage leak, the binding constraint):")
-    L.append("")
-    for _, r in df[~df["resolved"]].iterrows():
-        L.append(f"- {r['drug']} ({r['event_id']})")
-    L.append("")
+    if by_path.get("unresolved", 0):
+        L.append("Still unresolved:")
+        L.append("")
+        for _, r in df[~df["resolved"]].iterrows():
+            L.append(f"- {r['drug']} ({r['event_id']})")
+        L.append("")
     L.append("Resolved, hand vs Open Targets (for inspection):")
     L.append("")
     L.append("| Drug | hand MOA | OT MOA | hand target | OT target | hand mod | OT mod |")

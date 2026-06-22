@@ -1,13 +1,8 @@
-# Open Targets enrichment coverage (v2 leg 1)
+# Open Targets enrichment coverage (v2 leg 1, with alias layer)
 
-- Drug-name resolved to a ChEMBL molecule: **31/34** (91%).
-- Modality auto-match vs hand tag (of resolved): 25/31.
-
-Unresolved (the name-join coverage leak, the binding constraint):
-
-- KarXT (karxt-2022)
-- AXS-05 (axs05-2022)
-- VK2735 (vk2735-2024)
+- Tagged: **34/34** (100%).
+- By path: direct (Open Targets) 31, alias / INN re-resolve 2, manual (not in ChEMBL) 1, unresolved 0.
+- Modality auto-match vs hand tag (of resolved): 28/34.
 
 Resolved, hand vs Open Targets (for inspection):
 
@@ -20,7 +15,9 @@ Resolved, hand vs Open Targets (for inspection):
 | solanezumab | anti-amyloid mAb | Amyloid-beta A4 protein binding agent | amyloid-beta | APP | mab | mab |
 | crenezumab | anti-amyloid mAb | Amyloid-beta A4 protein inhibitor | amyloid-beta | APP | mab | mab |
 | bapineuzumab | anti-amyloid mAb | Amyloid-beta A4 protein binding agent | amyloid-beta | APP | mab | mab |
+| KarXT | muscarinic agonist | Muscarinic acetylcholine receptor M1 agonist | CHRM1/CHRM4 | CHRM1 | small_molecule | small_molecule |
 | zuranolone | gaba-a positive modulator | GABA-A receptor; anion channel positive allosteric modulator | GABRA | GABRA1 | small_molecule | small_molecule |
+| AXS-05 | nmda antagonist | Sigma opioid receptor agonist | GRIN | SIGMAR1 | small_molecule | small_molecule |
 | pimavanserin | 5-ht2a inverse agonist | Serotonin 2a (5-HT2a) receptor inverse agonist | HTR2A | HTR2A | small_molecule | small_molecule |
 | lumateperone | d2/5-ht2a modulator | Serotonin transporter inhibitor | DRD2/HTR2A | SLC6A4 | small_molecule | small_molecule |
 | eteplirsen | exon-skipping antisense | Dystrophin pre-mRNA positive modulator | dystrophin | DMD | antisense | antisense |
@@ -34,6 +31,7 @@ Resolved, hand vs Open Targets (for inspection):
 | betibeglogene autotemcel | lentiviral gene therapy | Hemoglobin beta chain exogenous gene | beta-globin | HBB | gene_therapy | gene |
 | tirzepatide | gip/glp-1 dual agonist | Glucagon-like peptide 1 receptor agonist | GIPR/GLP1R | GLP1R | peptide | peptide |
 | semaglutide | glp-1 agonist | Glucagon-like peptide 1 receptor agonist | GLP1R | GLP1R | peptide | peptide |
+| VK2735 | gip/glp-1 dual agonist | gip/glp-1 dual agonist | GIPR/GLP1R | GIPR/GLP1R | peptide | peptide |
 | retatrutide | gip/glp-1/glucagon triple | Gastric inhibitory polypeptide receptor agonist | GIPR/GLP1R/GCGR | GIPR | peptide | peptide |
 | orforglipron | oral glp-1 agonist |  | GLP1R |  | small_molecule | small_molecule |
 | CagriSema | glp-1/amylin coagonist | Glucagon-like peptide 1 receptor agonist | GLP1R/amylin | GLP1R | peptide | peptide |
