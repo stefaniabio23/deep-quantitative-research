@@ -4,6 +4,14 @@
 - By path: direct (Open Targets) 31, alias / INN re-resolve 2, manual (not in ChEMBL) 1, unresolved 0.
 - Modality auto-match vs hand tag (of resolved): 28/34.
 
+## FDA approval cross-check (openFDA Drugs@FDA)
+
+- Drug is FDA-approved (any indication/date): **17/34**. This is drug-level regulatory status, not a catalyst-level outcome label.
+- Drug-approved-but-this-catalyst-was-not-a-success: **2** (the granularity gap: a CRL or trial miss whose drug later won approval, or won approval in a different indication). Catalyst-level outcome needs trial-results data (AACT / CT.gov), the next leg.
+
+  - zuranolone (zuranolone-2019): hand outcome `failure`, FDA approved 2023-08-04
+  - pimavanserin (pimavanserin-drp-2021): hand outcome `failure`, FDA approved 2018-06-28
+
 Resolved, hand vs Open Targets (for inspection):
 
 | Drug | hand MOA | OT MOA | hand target | OT target | hand mod | OT mod |

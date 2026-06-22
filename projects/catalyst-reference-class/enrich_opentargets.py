@@ -112,6 +112,54 @@ def parse_drug(drug: dict) -> dict:
     }
 
 
+FDA_API = "https://api.fda.gov/drug/drugsfda.json"
+
+
+def parse_fda(results: list) -> dict:
+    """Pure: extract approval flag + earliest original-approval date from a
+    Drugs@FDA record. Note: this is DRUG-level regulatory status (any
+    indication, any date), not a catalyst-level outcome. CRLs are not
+    published here, so absence of approval is not proof of a CRL/failure."""
+    if not results:
+        return {"fda_approved": False, "fda_application": "", "fda_first_approval": ""}
+    r = results[0]
+    subs = r.get("submissions", [])
+    aps = [s for s in subs if s.get("submission_status") == "AP"]
+    orig_dates = [
+        s["submission_status_date"]
+        for s in aps
+        if s.get("submission_type") == "ORIG" and s.get("submission_status_date")
+    ]
+    first = min(orig_dates) if orig_dates else ""
+    return {
+        "fda_approved": bool(aps),
+        "fda_application": r.get("application_number", ""),
+        "fda_first_approval": f"{first[:4]}-{first[4:6]}-{first[6:8]}" if first else "",
+    }
+
+
+def fetch_fda(name: str) -> dict:
+    for attempt in range(4):
+        try:
+            r = requests.get(
+                FDA_API,
+                params={"search": f'openfda.generic_name:"{name}"', "limit": 1},
+                timeout=30,
+            )
+        except (requests.Timeout, requests.ConnectionError):
+            time.sleep(2 ** attempt)
+            continue
+        if r.status_code == 429:
+            time.sleep(2 ** attempt)
+            continue
+        if r.status_code == 404:  # openFDA returns 404 for no matches
+            return parse_fda([])
+        if r.status_code != 200:
+            return parse_fda([])
+        return parse_fda(r.json().get("results", []))
+    return parse_fda([])
+
+
 def load_aliases(path: Path = ALIASES) -> dict:
     """corpus_name (lower) -> {resolve_as, manual_moa, manual_target, manual_modality}."""
     if not path.exists():
@@ -150,6 +198,11 @@ def validate(corpus_path: Path, out_dir: Path) -> dict:
     rows = []
     for _, c in corpus.iterrows():
         e = enrich_one(str(c["drug"]), aliases)
+        fda = fetch_fda(str(c["drug"]))
+        if not fda["fda_approved"]:  # fall back to the INN alias for combos/codes
+            a = aliases.get(str(c["drug"]).lower())
+            if a and a.get("resolve_as"):
+                fda = fetch_fda(a["resolve_as"])
         rows.append(
             {
                 "event_id": c["event_id"],
@@ -164,9 +217,12 @@ def validate(corpus_path: Path, out_dir: Path) -> dict:
                 "hand_modality": c["modality"],
                 "ot_modality": e.get("ot_modality", ""),
                 "ot_indications": e.get("ot_indications", ""),
+                "hand_outcome": c["outcome"],
+                "fda_approved": fda["fda_approved"],
+                "fda_first_approval": fda["fda_first_approval"],
             }
         )
-        time.sleep(0.3)  # be polite to the API
+        time.sleep(0.3)  # be polite to the APIs
     df = pd.DataFrame(rows)
     n, res = len(df), int(df["resolved"].sum())
     by_path = df["path"].value_counts().to_dict()
@@ -184,6 +240,29 @@ def validate(corpus_path: Path, out_dir: Path) -> dict:
         f"unresolved {by_path.get('unresolved', 0)}."
     )
     L.append(f"- Modality auto-match vs hand tag (of resolved): {modality_agree}/{res}.")
+    L.append("")
+    # FDA approval cross-check (drug-level regulatory status, not catalyst outcome).
+    n_appr = int(df["fda_approved"].sum())
+    # Mismatch: the drug is FDA-approved but THIS catalyst was hand-labeled a
+    # non-success. Expected for CRLs/failures whose drug later won approval, or
+    # in another indication, the drug-vs-catalyst granularity gap.
+    mism = df[(df["fda_approved"]) & (df["hand_outcome"] != "success")]
+    L.append("## FDA approval cross-check (openFDA Drugs@FDA)")
+    L.append("")
+    L.append(
+        f"- Drug is FDA-approved (any indication/date): **{n_appr}/{n}**. This is "
+        "drug-level regulatory status, not a catalyst-level outcome label."
+    )
+    L.append(
+        f"- Drug-approved-but-this-catalyst-was-not-a-success: **{len(mism)}** "
+        "(the granularity gap: a CRL or trial miss whose drug later won approval, "
+        "or won approval in a different indication). Catalyst-level outcome needs "
+        "trial-results data (AACT / CT.gov), the next leg."
+    )
+    if len(mism):
+        L.append("")
+        for _, r in mism.iterrows():
+            L.append(f"  - {r['drug']} ({r['event_id']}): hand outcome `{r['hand_outcome']}`, FDA approved {r['fda_first_approval'] or 'yes'}")
     L.append("")
     if by_path.get("unresolved", 0):
         L.append("Still unresolved:")
@@ -229,7 +308,14 @@ def _self_test() -> int:
     assert p["ot_target"] == "APP", p["ot_target"]
     assert "Alzheimer disease" in p["ot_indications"], p["ot_indications"]
     assert parse_drug({}) == {}
-    print("self-test OK: Open Targets drug record parsed (MOA/target/modality/indications).")
+    # FDA parser
+    f = parse_fda([{"application_number": "BLA761269", "submissions": [
+        {"submission_type": "ORIG", "submission_status": "AP", "submission_status_date": "20230106"},
+        {"submission_type": "SUPPL", "submission_status": "AP", "submission_status_date": "20250124"},
+    ]}])
+    assert f["fda_approved"] and f["fda_first_approval"] == "2023-01-06", f
+    assert parse_fda([])["fda_approved"] is False
+    print("self-test OK: Open Targets + FDA records parsed.")
     return 0
 
 
