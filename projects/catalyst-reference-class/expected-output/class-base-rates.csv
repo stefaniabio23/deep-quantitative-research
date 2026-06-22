@@ -1,0 +1,7 @@
+disease_area,moa,n,p_success,weighted_success_rate,confidence
+cns,anti-amyloid mAb,7,0.429,0.429,medium
+metabolic,fgf21 analog,2,0.5,0.75,insufficient
+metabolic,gip/glp-1 dual agonist,2,1.0,1.0,insufficient
+oncology,kras g12c inhibitor,2,1.0,1.0,insufficient
+rare,aav gene therapy,4,0.75,0.75,low
+rare,exon-skipping antisense,3,1.0,1.0,low
