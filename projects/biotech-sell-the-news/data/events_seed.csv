@@ -1,0 +1,18 @@
+event_id,ticker,company_name,catalyst_date,catalyst_type,outcome,nct_id,source
+SRPT-EXONDYS-2016,SRPT,Sarepta Therapeutics,2016-09-19,pdufa,positive,,sarepta-ir/drugs.com
+AMRN-REDUCEIT-2018,AMRN,Amarin,2018-09-24,phase3_readout,positive,NCT01492361,amarin-ir
+ITCI-CAPLYTA-2019,ITCI,Intra-Cellular Therapies,2019-12-20,pdufa,positive,,drugs.com/globenewswire
+SAGE-MOUNTAIN-2019,SAGE,Sage Therapeutics,2019-12-05,phase3_readout,negative,NCT03672175,sage-ir/fiercebiotech
+ICPT-NASH-2020,ICPT,Intercept Pharmaceuticals,2020-06-29,pdufa,negative,,intercept-ir/globenewswire
+BMRN-ROCTAVIAN-2020,BMRN,BioMarin Pharmaceutical,2020-08-18,pdufa,negative,,biomarin-ir/prnewswire
+ACAD-HARMONY-2021,ACAD,Acadia Pharmaceuticals,2021-04-05,pdufa,negative,,acadia-ir/businesswire
+BIIB-ADUHELM-2021,BIIB,Biogen,2021-06-07,pdufa,positive,,biogen-ir/fda
+KRTX-EMERGENT2-2022,KRTX,Karuna Therapeutics,2022-08-08,phase3_readout,positive,NCT04659161,karuna-ir/globenewswire
+AXSM-AUVELITY-2022,AXSM,Axsome Therapeutics,2022-08-19,pdufa,positive,,axsome-ir/globenewswire
+ESPR-CLEAR-2022,ESPR,Esperion Therapeutics,2022-12-07,phase3_readout,mixed,NCT02993406,esperion-ir/globenewswire
+MDGL-MAESTRONASH-2022,MDGL,Madrigal Pharmaceuticals,2022-12-19,phase3_readout,positive,NCT03900429,madrigal-ir/globenewswire
+SRPT-ELEVIDYS-2023,SRPT,Sarepta Therapeutics,2023-06-22,pdufa,positive,,fda/sarepta-ir
+AKRO-SYMMETRY-2023,AKRO,Akero Therapeutics,2023-10-10,phase2_readout,negative,NCT05039450,akero-ir/appliedclinicaltrials
+CYTK-SEQUOIA-2023,CYTK,Cytokinetics,2023-12-27,phase3_readout,positive,NCT05186818,cytokinetics-ir
+VKTX-VENTURE-2024,VKTX,Viking Therapeutics,2024-02-27,phase2_readout,positive,NCT06068946,viking-ir/fiercebiotech
+INSM-ASPEN-2024,INSM,Insmed,2024-05-28,phase3_readout,positive,NCT04594369,insmed-ir
