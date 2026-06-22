@@ -96,6 +96,59 @@ def first_vintage_series(vintage_df: pd.DataFrame) -> pd.Series:
     return series.sort_index()
 
 
+def final_vintage_series(vintage_df: pd.DataFrame) -> pd.Series:
+    """Per-observation, return the latest-published (final) value.
+
+    This is the fully-revised view a naive analyst gets by downloading
+    the series today. Backtesting against it overstates real-time
+    predictability because it embeds restatements that were not visible
+    when a decision had to be made. Pair with ``first_vintage_series``
+    to quantify the point-in-time gap: the difference between the two is
+    exactly the information leak.
+    """
+    if vintage_df.empty:
+        return pd.Series(dtype=float, name="value")
+    final = (
+        vintage_df.sort_values(["observation_date", "vintage_date"])
+        .groupby("observation_date", as_index=False)
+        .last()
+    )
+    series = pd.Series(
+        final["value"].values,
+        index=pd.DatetimeIndex(final["observation_date"], name="date"),
+        name="value",
+    )
+    return series.sort_index()
+
+
+def first_revisions(vintage_df: pd.DataFrame) -> pd.Series:
+    """Per-observation, the first revision: second-vintage minus first.
+
+    For each observation period, find the first published value and the
+    next distinct vintage's value; the revision is ``second - first``.
+    Observations with only one vintage (never revised in the window) are
+    dropped, not zero-filled, because "no revision yet" and "revised to
+    the same number" are different facts. The result is a Series indexed
+    by ``observation_date`` carrying the signed first revision. Its sign
+    is the input to revision-momentum tests; its magnitude feeds the
+    point-in-time information-gap accounting.
+    """
+    if vintage_df.empty:
+        return pd.Series(dtype=float, name="first_revision")
+    ordered = vintage_df.sort_values(["observation_date", "vintage_date"])
+    revisions: dict[pd.Timestamp, float] = {}
+    for obs_date, group in ordered.groupby("observation_date"):
+        values = group["value"].tolist()
+        if len(values) < 2:
+            continue
+        revisions[obs_date] = float(values[1]) - float(values[0])
+    if not revisions:
+        return pd.Series(dtype=float, name="first_revision")
+    series = pd.Series(revisions, name="first_revision")
+    series.index = pd.DatetimeIndex(series.index, name="date")
+    return series.sort_index()
+
+
 def as_of_series(
     vintage_df: pd.DataFrame,
     as_of_dates: pd.DatetimeIndex,

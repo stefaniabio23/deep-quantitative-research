@@ -1,0 +1,110 @@
+signal_id: alfred-revision-momentum
+signal_name: "Revision Momentum in Real-Time US Macro Data (ALFRED)"
+
+# Pre-registered BEFORE any data fetch. Two stages, declared up front so a
+# later reader can check the verdict against the registered hypothesis.
+
+hypothesis:
+  statement: >
+    The first revision to a major US macro series is not white noise.
+    Its sign is serially correlated: when an initial release is revised
+    up, the next period's initial release is also more likely to be
+    revised up. This "revision momentum" exists because statistical
+    agencies smooth incoming sample as it arrives, so systematic
+    under- or over-statement at turning points leaks across consecutive
+    vintages. Tested on three heavily-revised monthly series
+    (nonfarm payrolls, retail sales, industrial production) using
+    ALFRED vintage archives, with the point-in-time vs final-vintage
+    gap reported as a first-class result.
+  target_variable: signed first revision (second vintage minus first vintage)
+  expected_direction: positive   # revision_t correlates positively with revision_{t-1}
+  expected_lag_periods: [1]
+
+# Stage 1 is self-contained (ALFRED only) and academic. Stage 2 maps the
+# real-time revision direction onto a contemporaneous asset move.
+stages:
+  stage_1:
+    name: "revision predicts revision"
+    inputs: [ALFRED vintages only]
+    claim: >
+      sign(first_revision_t) is predicted by sign(first_revision_{t-1}).
+      Reported per series x lag with Bonferroni correction over the family.
+    secondary: >
+      Point-in-time gap: autocorrelation of month-over-month growth
+      computed on final-vintage data overstates real-time predictability
+      relative to first-vintage data. The difference is the leak.
+    status: implemented   # run_revision_momentum.py
+  stage_2:
+    name: "revision predicts asset move"
+    inputs: [ALFRED vintages, DGS10 / DGS2 Treasury yields via FRED]
+    claim: >
+      The sign of the real-time surprise (first release vs prior
+      consensus proxy) and the subsequent first revision predict the
+      change in Treasury yields around the release window.
+    status: pre-registered   # not yet run; see README "Stage 2"
+
+target:
+  dataset_id: fred-alfred
+  field: first_revision
+  cadence: monthly
+  transform: null
+  revisions_possible: true   # the entire point of the study
+  point_in_time_safe: true   # vintages reconstruct exactly what was known
+
+predictors:
+  - dataset_id: fred-alfred
+    field: lagged_first_revision
+    cadence: monthly
+    variable_type: flow   # payroll/sales changes are flows
+    default_aggregation: sum
+    transforms: [zscore_12]
+    lags: [1, 2, 3]
+
+series:
+  # FRED series ids fetched with ALFRED realtime params. All free.
+  - id: PAYEMS
+    label: nonfarm payrolls (total, thousands)
+  - id: RSAFS
+    label: advance retail sales (millions USD)
+  - id: INDPRO
+    label: industrial production (index 2017=100)
+
+join_logic:
+  join_keys: [observation_date]
+  time_alignment: period_end
+  release_lag_policy: respect_registry_lag
+
+feature_grid:
+  mode: controlled
+  max_features: 3        # one revision series per macro series
+  max_lags: 3
+  multiple_testing_correction: true
+  # m = 3 series x 3 lags = 9 trials for the stage-1 momentum test.
+  pre_specified_feature: fred-alfred::zscore_12::lag_1
+
+validation:
+  # Train/test split is set after the fetch establishes vintage coverage.
+  # ALFRED depth differs by series (PAYEMS goes back furthest). The runner
+  # uses an in-sample / out-of-sample split at 2015-01-01 by default.
+  train_period: pre-2015
+  test_period: 2015-01-01/onward
+  walk_forward: true
+  regime_split: false
+
+outputs:
+  signal_card: true
+  dashboard: false   # custom family runner emits a markdown + csv verdict
+  experiment_log: true
+
+caveats:
+  - >
+    ALFRED first-vintage reconstruction assumes the earliest archived
+    vintage is the genuine first release. For series whose archive starts
+    after the series itself, early observations have no real first vintage
+    and are dropped, not back-filled.
+  - >
+    Revision magnitudes are in each series' native units; cross-series
+    momentum tests standardize (z-score) before comparison.
+  - >
+    Stage 2 yield mapping is correlational, not a tradable backtest, until
+    release-time alignment and transaction costs are modeled.
