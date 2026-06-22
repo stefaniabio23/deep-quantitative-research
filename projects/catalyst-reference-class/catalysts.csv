@@ -1,35 +1,35 @@
-event_id,drug,company,ticker,disease_area,indication,moa,target,modality,phase,outcome,tags,catalyst_date,note
-aducanumab-2021,aducanumab,Biogen,BIIB,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,accelerated_approval;surrogate_endpoint;adcom;first_in_class;controversial,2021-06-07,accelerated approval over AdCom objection; later withdrawn
-lecanemab-2023,lecanemab,Eisai/Biogen,BIIB,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,accelerated_approval;ph3_pivotal,2023-01-06,Clarity AD met clinical endpoint
-donanemab-2024,donanemab,Eli Lilly,LLY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,ph3_pivotal;adcom,2024-07-02,TRAILBLAZER-ALZ2 positive
-gantenerumab-2022,gantenerumab,Roche,RHHBY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal,2022-11-14,GRADUATE I/II missed
-solanezumab-2023,solanezumab,Eli Lilly,LLY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal;prevention,2023-03-08,A4 prevention failed
-crenezumab-2022,crenezumab,Roche,RHHBY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal;prevention,2022-06-16,API ADAD failed
-bapineuzumab-2012,bapineuzumab,Pfizer/JNJ,PFE,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal,2012-08-06,early anti-amyloid failure
-karxt-2022,KarXT,Karuna,KRTX,cns,schizophrenia,muscarinic agonist,CHRM1/CHRM4,small_molecule,ph3,success,first_in_class;ph3_pivotal,2022-08-08,EMERGENT-2 positive; approved 2024
-zuranolone-2019,zuranolone,Sage,SAGE,cns,major_depression,gaba-a positive modulator,GABRA,small_molecule,ph3,failure,ph3_pivotal,2019-12-05,MOUNTAIN missed in MDD; later approved PPD
-axs05-2022,AXS-05,Axsome,AXSM,cns,major_depression,nmda antagonist,GRIN,small_molecule,pdufa,success,prior_crl,2022-08-19,Auvelity approved after 2021 CRL
-pimavanserin-drp-2021,pimavanserin,Acadia,ACAD,cns,dementia_psychosis,5-ht2a inverse agonist,HTR2A,small_molecule,pdufa,failure,adcom,2021-04-05,CRL for dementia-related psychosis
-lumateperone-2019,lumateperone,Intra-Cellular,ITCI,cns,schizophrenia,d2/5-ht2a modulator,DRD2/HTR2A,small_molecule,pdufa,success,,2019-12-20,Caplyta approved
-eteplirsen-2016,eteplirsen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint;adcom,2016-09-19,Exondys 51 accelerated approval
-golodirsen-2019,golodirsen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint;prior_crl,2019-12-12,Vyondys 53 approved after CRL
-casimersen-2021,casimersen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint,2021-02-25,Amondys 45 approved
-srp9001-2023,SRP-9001,Sarepta,SRPT,rare,dmd,aav gene therapy,microdystrophin,gene_therapy,pdufa,success,accelerated_approval;surrogate_endpoint;adcom,2023-06-22,Elevidys accelerated approval
-valrox-2020,valoctocogene roxaparvovec,BioMarin,BMRN,rare,hemophilia_a,aav gene therapy,factor-viii,gene_therapy,pdufa,failure,surrogate_endpoint,2020-08-18,Roctavian CRL; approved 2023
-hemgenix-2022,etranacogene dezaparvovec,CSL/uniQure,QURE,rare,hemophilia_b,aav gene therapy,factor-ix,gene_therapy,pdufa,success,,2022-11-22,Hemgenix approved
-zolgensma-2019,onasemnogene abeparvovec,Novartis,NVS,rare,sma,aav gene therapy,SMN1,gene_therapy,pdufa,success,,2019-05-24,Zolgensma approved
-exacel-2023,exagamglogene autotemcel,Vertex/CRISPR,CRSP,rare,sickle_cell,crispr gene editing,BCL11A,gene_editing,pdufa,success,first_in_class,2023-12-08,Casgevy first CRISPR approval
-beticel-2022,betibeglogene autotemcel,bluebird,BLUE,rare,beta_thalassemia,lentiviral gene therapy,beta-globin,gene_therapy,pdufa,success,,2022-08-17,Zynteglo approved
-tirzepatide-2023,tirzepatide,Eli Lilly,LLY,metabolic,obesity,gip/glp-1 dual agonist,GIPR/GLP1R,peptide,ph3,success,ph3_pivotal,2023-11-08,Zepbound approved (SURMOUNT)
-semaglutide-2021,semaglutide,Novo Nordisk,NVO,metabolic,obesity,glp-1 agonist,GLP1R,peptide,ph3,success,ph3_pivotal,2021-06-04,Wegovy approved (STEP)
-vk2735-2024,VK2735,Viking,VKTX,metabolic,obesity,gip/glp-1 dual agonist,GIPR/GLP1R,peptide,ph2,success,ph2,2024-02-27,VENTURE positive
-retatrutide-2023,retatrutide,Eli Lilly,LLY,metabolic,obesity,gip/glp-1/glucagon triple,GIPR/GLP1R/GCGR,peptide,ph2,success,ph2,2023-06-26,phase 2 positive
-orforglipron-2025,orforglipron,Eli Lilly,LLY,metabolic,obesity,oral glp-1 agonist,GLP1R,small_molecule,ph3,success,oral;ph3_pivotal,2025-04-17,oral GLP-1 phase 3 positive
-cagrisema-2024,CagriSema,Novo Nordisk,NVO,metabolic,obesity,glp-1/amylin coagonist,GLP1R/amylin,peptide,ph3,mixed,ph3_pivotal;controversial,2024-12-20,REDEFINE met endpoint below expectations; stock fell
-resmetirom-2022,resmetirom,Madrigal,MDGL,metabolic,mash,thr-beta agonist,THRB,small_molecule,ph3,success,first_in_class;accelerated_approval;surrogate_endpoint,2022-12-19,MAESTRO-NASH positive; first MASH approval 2024
-efruxifermin-2023,efruxifermin,Akero,AKRO,metabolic,mash,fgf21 analog,FGF21,peptide,ph2,mixed,surrogate_endpoint,2023-10-10,SYMMETRY missed primary; HARMONY positive
-pegozafermin-2023,pegozafermin,89bio,ETNB,metabolic,mash,fgf21 analog,FGF21,peptide,ph2,success,surrogate_endpoint,2023-03-20,ENLIVEN positive
-ocaliva-nash-2020,obeticholic acid,Intercept,ICPT,metabolic,nash,fxr agonist,NR1H4,small_molecule,pdufa,failure,prior_crl;surrogate_endpoint;adcom,2020-06-29,NASH CRL
-bempedoic-2022,bempedoic acid,Esperion,ESPR,metabolic,cardiovascular,acl inhibitor,ACLY,small_molecule,ph3,success,ph3_pivotal;controversial,2022-12-07,CLEAR met endpoint; stock sold off
-sotorasib-2021,sotorasib,Amgen,AMGN,oncology,nsclc,kras g12c inhibitor,KRAS,small_molecule,pdufa,success,accelerated_approval;first_in_class,2021-05-28,Lumakras accelerated approval
-adagrasib-2022,adagrasib,Mirati,MRTX,oncology,nsclc,kras g12c inhibitor,KRAS,small_molecule,pdufa,success,accelerated_approval,2022-12-12,Krazati accelerated approval
+event_id,drug,company,ticker,disease_area,indication,moa,target,modality,phase,outcome,tags,catalyst_date,nct_id,note
+aducanumab-2021,aducanumab,Biogen,BIIB,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,accelerated_approval;surrogate_endpoint;adcom;first_in_class;controversial,2021-06-07,NCT02484547,accelerated approval over AdCom objection; later withdrawn
+lecanemab-2023,lecanemab,Eisai/Biogen,BIIB,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,accelerated_approval;ph3_pivotal,2023-01-06,NCT03887455,Clarity AD met clinical endpoint
+donanemab-2024,donanemab,Eli Lilly,LLY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,pdufa,success,ph3_pivotal;adcom,2024-07-02,NCT04437511,TRAILBLAZER-ALZ2 positive
+gantenerumab-2022,gantenerumab,Roche,RHHBY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal,2022-11-14,NCT03443973,GRADUATE I/II missed
+solanezumab-2023,solanezumab,Eli Lilly,LLY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal;prevention,2023-03-08,,A4 prevention failed
+crenezumab-2022,crenezumab,Roche,RHHBY,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal;prevention,2022-06-16,,API ADAD failed
+bapineuzumab-2012,bapineuzumab,Pfizer/JNJ,PFE,cns,alzheimers,anti-amyloid mAb,amyloid-beta,mab,ph3,failure,ph3_pivotal,2012-08-06,,early anti-amyloid failure
+karxt-2022,KarXT,Karuna,KRTX,cns,schizophrenia,muscarinic agonist,CHRM1/CHRM4,small_molecule,ph3,success,first_in_class;ph3_pivotal,2022-08-08,NCT04659161,EMERGENT-2 positive; approved 2024
+zuranolone-2019,zuranolone,Sage,SAGE,cns,major_depression,gaba-a positive modulator,GABRA,small_molecule,ph3,failure,ph3_pivotal,2019-12-05,NCT03672175,MOUNTAIN missed in MDD; later approved PPD
+axs05-2022,AXS-05,Axsome,AXSM,cns,major_depression,nmda antagonist,GRIN,small_molecule,pdufa,success,prior_crl,2022-08-19,NCT04019704,Auvelity approved after 2021 CRL
+pimavanserin-drp-2021,pimavanserin,Acadia,ACAD,cns,dementia_psychosis,5-ht2a inverse agonist,HTR2A,small_molecule,pdufa,failure,adcom,2021-04-05,,CRL for dementia-related psychosis
+lumateperone-2019,lumateperone,Intra-Cellular,ITCI,cns,schizophrenia,d2/5-ht2a modulator,DRD2/HTR2A,small_molecule,pdufa,success,,2019-12-20,,Caplyta approved
+eteplirsen-2016,eteplirsen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint;adcom,2016-09-19,,Exondys 51 accelerated approval
+golodirsen-2019,golodirsen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint;prior_crl,2019-12-12,,Vyondys 53 approved after CRL
+casimersen-2021,casimersen,Sarepta,SRPT,rare,dmd,exon-skipping antisense,dystrophin,antisense,pdufa,success,accelerated_approval;surrogate_endpoint,2021-02-25,,Amondys 45 approved
+srp9001-2023,SRP-9001,Sarepta,SRPT,rare,dmd,aav gene therapy,microdystrophin,gene_therapy,pdufa,success,accelerated_approval;surrogate_endpoint;adcom,2023-06-22,,Elevidys accelerated approval
+valrox-2020,valoctocogene roxaparvovec,BioMarin,BMRN,rare,hemophilia_a,aav gene therapy,factor-viii,gene_therapy,pdufa,failure,surrogate_endpoint,2020-08-18,,Roctavian CRL; approved 2023
+hemgenix-2022,etranacogene dezaparvovec,CSL/uniQure,QURE,rare,hemophilia_b,aav gene therapy,factor-ix,gene_therapy,pdufa,success,,2022-11-22,,Hemgenix approved
+zolgensma-2019,onasemnogene abeparvovec,Novartis,NVS,rare,sma,aav gene therapy,SMN1,gene_therapy,pdufa,success,,2019-05-24,,Zolgensma approved
+exacel-2023,exagamglogene autotemcel,Vertex/CRISPR,CRSP,rare,sickle_cell,crispr gene editing,BCL11A,gene_editing,pdufa,success,first_in_class,2023-12-08,,Casgevy first CRISPR approval
+beticel-2022,betibeglogene autotemcel,bluebird,BLUE,rare,beta_thalassemia,lentiviral gene therapy,beta-globin,gene_therapy,pdufa,success,,2022-08-17,,Zynteglo approved
+tirzepatide-2023,tirzepatide,Eli Lilly,LLY,metabolic,obesity,gip/glp-1 dual agonist,GIPR/GLP1R,peptide,ph3,success,ph3_pivotal,2023-11-08,,Zepbound approved (SURMOUNT)
+semaglutide-2021,semaglutide,Novo Nordisk,NVO,metabolic,obesity,glp-1 agonist,GLP1R,peptide,ph3,success,ph3_pivotal,2021-06-04,,Wegovy approved (STEP)
+vk2735-2024,VK2735,Viking,VKTX,metabolic,obesity,gip/glp-1 dual agonist,GIPR/GLP1R,peptide,ph2,success,ph2,2024-02-27,,VENTURE positive
+retatrutide-2023,retatrutide,Eli Lilly,LLY,metabolic,obesity,gip/glp-1/glucagon triple,GIPR/GLP1R/GCGR,peptide,ph2,success,ph2,2023-06-26,,phase 2 positive
+orforglipron-2025,orforglipron,Eli Lilly,LLY,metabolic,obesity,oral glp-1 agonist,GLP1R,small_molecule,ph3,success,oral;ph3_pivotal,2025-04-17,,oral GLP-1 phase 3 positive
+cagrisema-2024,CagriSema,Novo Nordisk,NVO,metabolic,obesity,glp-1/amylin coagonist,GLP1R/amylin,peptide,ph3,mixed,ph3_pivotal;controversial,2024-12-20,,REDEFINE met endpoint below expectations; stock fell
+resmetirom-2022,resmetirom,Madrigal,MDGL,metabolic,mash,thr-beta agonist,THRB,small_molecule,ph3,success,first_in_class;accelerated_approval;surrogate_endpoint,2022-12-19,,MAESTRO-NASH positive; first MASH approval 2024
+efruxifermin-2023,efruxifermin,Akero,AKRO,metabolic,mash,fgf21 analog,FGF21,peptide,ph2,mixed,surrogate_endpoint,2023-10-10,,SYMMETRY missed primary; HARMONY positive
+pegozafermin-2023,pegozafermin,89bio,ETNB,metabolic,mash,fgf21 analog,FGF21,peptide,ph2,success,surrogate_endpoint,2023-03-20,,ENLIVEN positive
+ocaliva-nash-2020,obeticholic acid,Intercept,ICPT,metabolic,nash,fxr agonist,NR1H4,small_molecule,pdufa,failure,prior_crl;surrogate_endpoint;adcom,2020-06-29,NCT02548351,NASH CRL
+bempedoic-2022,bempedoic acid,Esperion,ESPR,metabolic,cardiovascular,acl inhibitor,ACLY,small_molecule,ph3,success,ph3_pivotal;controversial,2022-12-07,,CLEAR met endpoint; stock sold off
+sotorasib-2021,sotorasib,Amgen,AMGN,oncology,nsclc,kras g12c inhibitor,KRAS,small_molecule,pdufa,success,accelerated_approval;first_in_class,2021-05-28,NCT04303780,Lumakras accelerated approval
+adagrasib-2022,adagrasib,Mirati,MRTX,oncology,nsclc,kras g12c inhibitor,KRAS,small_molecule,pdufa,success,accelerated_approval,2022-12-12,,Krazati accelerated approval
