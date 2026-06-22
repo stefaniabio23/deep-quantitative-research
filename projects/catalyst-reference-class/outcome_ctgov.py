@@ -145,8 +145,119 @@ def _self_test() -> int:
     assert derive_outcome(f) == "failure", f
     assert derive_outcome({"status": "TERMINATED", "has_results": False}) == "failure"
     assert derive_outcome({"status": "RECRUITING", "has_results": False}) == "unlabeled"
-    print("self-test OK: CT.gov primary-outcome p-value -> catalyst outcome.")
+    # resolver scoring: a results-bearing, phase-matched, large, on-date trial
+    # outscores a no-results one (which is disqualified).
+    good = {"has_results": True, "phases": ["PHASE3"], "enrollment": 1200,
+            "completion": "2023-01", "sponsor": "Eli Lilly and Company"}
+    assert score_candidate(good, "PHASE3", "Eli Lilly", 2023) > 5, score_candidate(good, "PHASE3", "Eli Lilly", 2023)
+    assert score_candidate({"has_results": False}, "PHASE3", "x", 2023) < 0
+    print("self-test OK: CT.gov outcome derivation + resolver scoring.")
     return 0
+
+
+# Indication -> CT.gov condition search term (abbreviations need expanding).
+INDICATION_CONDITION = {
+    "alzheimers": "alzheimer", "mash": "steatohepatitis", "nash": "steatohepatitis",
+    "dmd": "duchenne", "nsclc": "lung cancer", "major_depression": "major depressive disorder",
+    "dementia_psychosis": "dementia psychosis", "hemophilia_a": "hemophilia a",
+    "hemophilia_b": "hemophilia b", "sma": "spinal muscular atrophy",
+    "sickle_cell": "sickle cell", "beta_thalassemia": "thalassemia",
+}
+SEARCH_FIELDS = (
+    "protocolSection.identificationModule.nctId,protocolSection.designModule.phases,"
+    "protocolSection.designModule.enrollmentInfo,protocolSection.statusModule.overallStatus,"
+    "protocolSection.statusModule.primaryCompletionDateStruct,"
+    "protocolSection.sponsorCollaboratorsModule.leadSponsor,hasResults"
+)
+
+
+def search_candidates(drug: str, condition: str) -> list[dict]:
+    try:
+        r = requests.get(API, params={"query.intr": drug, "query.cond": condition,
+                                       "pageSize": 50, "fields": SEARCH_FIELDS}, timeout=30)
+        if r.status_code != 200:
+            return []
+        studies = r.json().get("studies", [])
+    except (requests.Timeout, requests.ConnectionError):
+        return []
+    out = []
+    for s in studies:
+        p = s.get("protocolSection", {})
+        d = p.get("designModule", {})
+        out.append({
+            "nct": p.get("identificationModule", {}).get("nctId", ""),
+            "phases": d.get("phases") or [],
+            "enrollment": (d.get("enrollmentInfo") or {}).get("count", 0) or 0,
+            "completion": (p.get("statusModule", {}).get("primaryCompletionDateStruct") or {}).get("date", ""),
+            "sponsor": (p.get("sponsorCollaboratorsModule", {}).get("leadSponsor") or {}).get("name", ""),
+            "has_results": bool(s.get("hasResults")),
+        })
+    return out
+
+
+def score_candidate(c: dict, phase: str, company: str, target_year: int | None) -> float:
+    """Pure: rank a candidate trial as the pivotal one for a catalyst."""
+    s = 0.0
+    if not c.get("has_results"):
+        return -1.0  # can't label it; disqualify
+    if phase and phase.upper().replace("PH", "PHASE") in [p for p in c.get("phases", [])]:
+        s += 3
+    s += min(c.get("enrollment", 0) / 500.0, 4)  # pivotal trials are large
+    cy = c.get("completion", "")[:4]
+    if target_year and cy.isdigit():
+        s += max(0, 3 - abs(int(cy) - target_year))
+    if company and c.get("sponsor"):
+        toks = company.lower().replace("/", " ").split()
+        if any(t in c["sponsor"].lower() for t in toks if len(t) > 3):
+            s += 1
+    return s
+
+
+def resolve_nct(drug: str, indication: str, phase: str, company: str = "",
+                target_year: int | None = None) -> tuple[str, float]:
+    cond = INDICATION_CONDITION.get(indication, indication)
+    cands = search_candidates(drug, cond)
+    scored = [(c["nct"], score_candidate(c, phase, company, target_year)) for c in cands]
+    scored = [(n, sc) for n, sc in scored if sc >= 0]
+    if not scored:
+        return ("", 0.0)
+    return max(scored, key=lambda x: x[1])
+
+
+def resolve_and_validate(corpus_path: Path = CORPUS, out_dir: Path = OUT_DIR) -> dict:
+    """Auto-resolve each curated-NCT catalyst from scratch (drug+indication+
+    phase+sponsor+date), label the resolved trial, and check outcome agreement
+    vs hand. The 9 curated NCTs are the ground truth: the meaningful metric is
+    whether the resolver+labeler produce the right OUTCOME, not the exact NCT
+    (multiple valid pivotal trials exist per drug)."""
+    import csv
+    rows = [r for r in csv.DictReader(open(corpus_path)) if r.get("nct_id", "").strip()]
+    out, agree, exact = [], 0, 0
+    for c in rows:
+        ty = int(c["catalyst_date"][:4]) if c.get("catalyst_date", "")[:4].isdigit() else None
+        nct, score = resolve_nct(c["drug"], c["indication"], c["phase"], c["company"], ty)
+        auto = label_nct(nct)["outcome"] if nct else "unresolved"
+        match = auto == c["outcome"]
+        agree += match
+        exact += (nct == c["nct_id"])
+        out.append({"drug": c["drug"], "curated_nct": c["nct_id"], "resolved_nct": nct,
+                    "auto_outcome": auto, "hand_outcome": c["outcome"], "outcome_match": match})
+        time.sleep(0.3)
+    n = len(rows)
+    L = ["# Drug -> NCT auto-resolver validation", ""]
+    L.append(f"Run on the {n} curated-NCT catalysts (ground truth).")
+    L.append("")
+    L.append(f"- **Outcome agreement** (resolver+labeler vs hand): **{agree}/{n}**.")
+    L.append(f"- Exact pivotal-NCT recovery: {exact}/{n} (strict; multiple valid trials exist per drug).")
+    L.append("")
+    L.append("| Drug | curated NCT | resolved NCT | auto | hand | outcome match |")
+    L.append("|---|---|---|---|---|---|")
+    for o in out:
+        L.append(f"| {o['drug']} | {o['curated_nct']} | {o['resolved_nct'] or '(none)'} | {o['auto_outcome']} | {o['hand_outcome']} | {o['outcome_match']} |")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "ctgov-resolver-validation.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+    return {"n": n, "agree": agree, "exact": exact}
 
 
 def label_corpus(corpus_path: Path = CORPUS, out_dir: Path = OUT_DIR) -> dict:
@@ -200,6 +311,9 @@ def main(argv: list[str]) -> int:
         return _self_test()
     if "--corpus" in argv:
         label_corpus()
+        return 0
+    if "--resolve" in argv:
+        resolve_and_validate()
         return 0
     print("Live CT.gov outcome derivation (demo):\n")
     for label, nct in DEMO:
