@@ -1,0 +1,16 @@
+ticker,company,drug,disease_area,indication,moa,target,modality,phase,note
+IMVT,Immunovant,IMVT-1402,immunology,autoimmune,anti-fcrn,FCGRT,mab,ph3,FcRn inhibitor (RA / Graves) after batoclimab discontinued
+ROIV,Roivant,brepocitinib,immunology,dermatomyositis,tyk2/jak1 inhibitor,TYK2,small_molecule,pdufa,Priority Review DM; PDUFA Q3 2026
+PALI,Palatin,PL7737,metabolic,obesity,melanocortin-4 agonist,MC4R,small_molecule,ph1,oral MC4R agonist for obesity
+SEPN,Septerna,SEP-786,other,hypoparathyroidism,pth1r agonist,PTH1R,small_molecule,ph1,GPCR platform; Novo collaboration
+PTGX,Protagonist,rusfertide,other,polycythemia vera,hepcidin mimetic,HAMP,peptide,pdufa,VERIFY ph3 positive; NDA with Takeda
+ESTA,Establishment Labs,Motiva,device,breast aesthetics,medical device,,device,approved,NOT a drug (medical device PMA) - out of scope
+ABVX,Abivax,obefazimod,immunology,ulcerative colitis,mir-124 enhancer,,small_molecule,ph3,ABTECT ph3 positive; NDA late 2026
+EQ,Equillium,itolizumab,immunology,immuno-inflammatory,anti-cd6 mab,CD6,mab,ph2,GVHD / lupus nephritis / UC
+IKT,Inhibikase,IKT-001,cardio,pulmonary arterial hypertension,tyrosine kinase inhibitor,ABL1,small_molecule,ph3,imatinib prodrug; IMPROVE-PAH ph3
+ZLAB,Zai Lab,zocilurtatug pelitecan,oncology,small cell lung cancer,dll3 adc,DLL3,mab,ph3,DLL3 ADC (topo-1 payload)
+ZURA,Zura Bio,tibulizumab,immunology,systemic sclerosis,anti-il17a/baff bispecific,IL17A,mab,ph2,dual IL-17A / BAFF antagonist
+QURE,uniQure,AMT-130,rare,huntingtons,aav gene therapy,HTT,gene_therapy,ph3,AAV5 HTT-lowering microRNA
+JANX,Janux,JANX007,oncology,prostate cancer,psma t-cell engager,FOLH1,mab,ph1,tumor-activated bispecific (TRACTr)
+CYTK,Cytokinetics,aficamten,cardio,hypertrophic cardiomyopathy,cardiac myosin inhibitor,MYH7,small_molecule,approved,MYQORZO approved 2026
+MNPR,Monopar,ALXN1840,rare,wilson disease,copper modulator,,small_molecule,pdufa,bis-choline tetrathiomolybdate; NDA mid-2026
