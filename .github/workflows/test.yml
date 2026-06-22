@@ -126,6 +126,8 @@ jobs:
           pip install -e ".[dev]"
       - name: Reference-class engine self-test
         run: python projects/catalyst-reference-class/run_reference_class.py --self-test
+      - name: Open Targets enrichment parser self-test
+        run: python projects/catalyst-reference-class/enrich_opentargets.py --self-test
       - name: Sell-the-news event-study self-test
         run: python projects/biotech-sell-the-news/run_sell_the_news.py --self-test
       - name: ALFRED revision-momentum self-test
