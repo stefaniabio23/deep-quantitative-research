@@ -1,0 +1,35 @@
+event_id,drug,resolved,chembl_id,hand_moa,ot_moa,hand_target,ot_target,hand_modality,ot_modality,ot_indications
+aducanumab-2021,aducanumab,True,CHEMBL3039540,anti-amyloid mAb,Amyloid-beta A4 protein binding agent,amyloid-beta,APP,mab,mab,Alzheimer disease; dementia
+lecanemab-2023,lecanemab,True,CHEMBL3833321,anti-amyloid mAb,Amyloid-beta A4 protein inhibitor,amyloid-beta,APP,mab,mab,Cognitive impairment; Alzheimer disease; dementia
+donanemab-2024,donanemab,True,CHEMBL4297245,anti-amyloid mAb,Amyloid-beta A4 protein disrupting agent,amyloid-beta,APP,mab,mab,Alzheimer disease; Cognitive impairment; dementia
+gantenerumab-2022,gantenerumab,True,CHEMBL1743025,anti-amyloid mAb,Amyloid-beta A4 protein binding agent,amyloid-beta,APP,mab,mab,Alzheimer disease
+solanezumab-2023,solanezumab,True,CHEMBL1743072,anti-amyloid mAb,Amyloid-beta A4 protein binding agent,amyloid-beta,APP,mab,mab,Alzheimer disease; Cognitive impairment
+crenezumab-2022,crenezumab,True,CHEMBL1743004,anti-amyloid mAb,Amyloid-beta A4 protein inhibitor,amyloid-beta,APP,mab,mab,Alzheimer disease
+bapineuzumab-2012,bapineuzumab,True,CHEMBL2108576,anti-amyloid mAb,Amyloid-beta A4 protein binding agent,amyloid-beta,APP,mab,mab,Alzheimer disease
+karxt-2022,KarXT,False,,muscarinic agonist,,CHRM1/CHRM4,,small_molecule,,
+zuranolone-2019,zuranolone,True,CHEMBL4105630,gaba-a positive modulator,GABA-A receptor; anion channel positive allosteric modulator,GABRA,GABRA1,small_molecule,small_molecule,postpartum depression; Parkinson disease; depressive disorder; essential tremor
+axs05-2022,AXS-05,False,,nmda antagonist,,GRIN,,small_molecule,,
+pimavanserin-drp-2021,pimavanserin,True,CHEMBL2111101,5-ht2a inverse agonist,Serotonin 2a (5-HT2a) receptor inverse agonist,HTR2A,HTR2A,small_molecule,small_molecule,schizophrenia; neurodegenerative disease; Parkinson disease; psychosis
+lumateperone-2019,lumateperone,True,CHEMBL3306803,d2/5-ht2a modulator,Serotonin transporter inhibitor,DRD2/HTR2A,SLC6A4,small_molecule,small_molecule,insomnia; major depressive disorder; depressive disorder; bipolar disorder
+eteplirsen-2016,eteplirsen,True,CHEMBL2108278,exon-skipping antisense,Dystrophin pre-mRNA positive modulator,dystrophin,DMD,antisense,antisense,Duchenne muscular dystrophy; muscular dystrophy
+golodirsen-2019,golodirsen,True,CHEMBL4297762,exon-skipping antisense,Dystrophin pre-mRNA positive modulator,dystrophin,DMD,antisense,antisense,Duchenne muscular dystrophy; muscular dystrophy
+casimersen-2021,casimersen,True,CHEMBL4297566,exon-skipping antisense,Dystrophin pre-mRNA positive modulator,dystrophin,DMD,antisense,antisense,muscular dystrophy; Duchenne muscular dystrophy
+srp9001-2023,SRP-9001,True,CHEMBL4650241,aav gene therapy,Dystrophin exogenous gene,microdystrophin,DMD,gene_therapy,gene,Becker muscular dystrophy; Duchenne muscular dystrophy
+valrox-2020,valoctocogene roxaparvovec,True,CHEMBL4297579,aav gene therapy,Coagulation factor IX exogenous protein,factor-viii,F9,gene_therapy,gene,hemophilia A; hemorrhage; hemophilia
+hemgenix-2022,etranacogene dezaparvovec,True,CHEMBL5095451,aav gene therapy,Coagulation factor IX exogenous protein,factor-ix,F9,gene_therapy,gene,hemophilia B; hemorrhage
+zolgensma-2019,onasemnogene abeparvovec,True,CHEMBL4297240,aav gene therapy,Survival motor neuron protein exogenous gene,SMN1,SMN2,gene_therapy,gene,"proximal spinal muscular atrophy; spinal muscular atrophy; spinal muscular atrophy, type 1"
+exacel-2023,exagamglogene autotemcel,True,CHEMBL5095474,crispr gene editing,B-cell lymphoma/leukemia 11A gene editing negative modulator,BCL11A,BCL11A,gene_editing,gene,sickle cell disease; beta thalassemia; Beta-thalassemia; Thalassemia
+beticel-2022,betibeglogene autotemcel,True,CHEMBL4594311,lentiviral gene therapy,Hemoglobin beta chain exogenous gene,beta-globin,HBB,gene_therapy,gene,beta-thalassemia major; Beta-thalassemia; sickle cell disease
+tirzepatide-2023,tirzepatide,True,CHEMBL4297839,gip/glp-1 dual agonist,Glucagon-like peptide 1 receptor agonist,GIPR/GLP1R,GLP1R,peptide,peptide,chronic kidney disease; non-alcoholic steatohepatitis; Hepatic failure; type 2 diabetes mellitus
+semaglutide-2021,semaglutide,True,CHEMBL2108724,glp-1 agonist,Glucagon-like peptide 1 receptor agonist,GLP1R,GLP1R,peptide,peptide,major depressive disorder; liver disease; Osteopenia; diabetes mellitus
+vk2735-2024,VK2735,False,,gip/glp-1 dual agonist,,GIPR/GLP1R,,peptide,,
+retatrutide-2023,retatrutide,True,CHEMBL5095485,gip/glp-1/glucagon triple,Gastric inhibitory polypeptide receptor agonist,GIPR/GLP1R/GCGR,GIPR,peptide,peptide,obesity; Hepatic failure; diabetes mellitus; type 2 diabetes mellitus
+orforglipron-2025,orforglipron,True,CHEMBL4446782,oral glp-1 agonist,,GLP1R,,small_molecule,small_molecule,Renal insufficiency; osteoarthritis; obesity; Hepatic failure
+cagrisema-2024,CagriSema,True,CHEMBL2108724,glp-1/amylin coagonist,Glucagon-like peptide 1 receptor agonist,GLP1R/amylin,GLP1R,peptide,peptide,major depressive disorder; liver disease; Osteopenia; diabetes mellitus
+resmetirom-2022,resmetirom,True,CHEMBL3261331,thr-beta agonist,Thyroid hormone receptor beta-1 agonist,THRB,THRB,small_molecule,small_molecule,non-alcoholic steatohepatitis; Hypercholesterolemia; familial hyperlipidemia; Abnormal circulating lipid concentration
+efruxifermin-2023,efruxifermin,True,CHEMBL4594389,fgf21 analog,,FGF21,,peptide,peptide,non-alcoholic fatty liver disease; diabetes mellitus; non-alcoholic steatohepatitis; type 2 diabetes mellitus
+pegozafermin-2023,pegozafermin,True,CHEMBL4594466,fgf21 analog,,FGF21,,peptide,peptide,non-alcoholic fatty liver disease; non-alcoholic steatohepatitis; Hypertriglyceridemia
+ocaliva-nash-2020,obeticholic acid,True,CHEMBL566315,fxr agonist,Bile acid receptor FXR agonist,NR1H4,NR1H4,small_molecule,small_molecule,non-alcoholic steatohepatitis; sclerosing cholangitis; fatty liver disease; obesity
+bempedoic-2022,bempedoic acid,True,CHEMBL3545313,acl inhibitor,ATP-citrate synthase inhibitor,ACLY,ACLY,small_molecule,small_molecule,atherosclerosis; coronary artery disease; familial hypercholesterolemia; Disorder of lipid metabolism
+sotorasib-2021,sotorasib,True,CHEMBL4535757,kras g12c inhibitor,GTPase KRas inhibitor,KRAS,KRAS,small_molecule,small_molecule,liver disease; colorectal cancer; non-small cell lung carcinoma; pancreatic adenocarcinoma
+adagrasib-2022,adagrasib,True,CHEMBL4594350,kras g12c inhibitor,GTPase KRas inhibitor,KRAS,KRAS,small_molecule,small_molecule,metastatic malignant neoplasm; neoplasm; cancer; Malignant Pancreatic Neoplasm
