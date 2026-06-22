@@ -28,8 +28,13 @@ from __future__ import annotations
 
 import sys
 import time
+from pathlib import Path
 
 import requests
+
+HERE = Path(__file__).parent
+CORPUS = HERE / "catalysts.csv"
+OUT_DIR = HERE / "expected-output"
 
 API = "https://clinicaltrials.gov/api/v2/studies"
 FIELDS = (
@@ -144,9 +149,58 @@ def _self_test() -> int:
     return 0
 
 
+def label_corpus(corpus_path: Path = CORPUS, out_dir: Path = OUT_DIR) -> dict:
+    """Auto-label outcome for every corpus catalyst that has a curated nct_id,
+    and compare to the hand outcome. Validates the trial-results labeler at the
+    corpus level. nct_id is curated (verified pivotal trial) because naive
+    drug->NCT search is too noisy to resolve the pivotal trial automatically."""
+    import csv
+    rows = list(csv.DictReader(open(corpus_path)))
+    out, agree, divergent = [], 0, []
+    n_nct = 0
+    for c in rows:
+        nct = c.get("nct_id", "").strip()
+        if not nct:
+            continue
+        n_nct += 1
+        r = label_nct(nct)
+        auto, hand = r["outcome"], c["outcome"]
+        status = "match" if auto == hand else ("unlabeled" if auto == "unlabeled" else "divergent")
+        if status == "match":
+            agree += 1
+        elif status == "divergent":
+            divergent.append((c["drug"], nct, auto, hand))
+        out.append({"event_id": c["event_id"], "drug": c["drug"], "nct_id": nct,
+                    "primary_pvalue": r["primary_pvalue"], "auto_outcome": auto,
+                    "hand_outcome": hand, "status": status})
+        time.sleep(0.3)
+    labeled = [o for o in out if o["status"] != "unlabeled"]
+    L = ["# CT.gov corpus outcome auto-labeling", ""]
+    L.append(f"- Catalysts with a curated NCT: {n_nct}/{len(rows)}.")
+    L.append(f"- Auto-labeled (clean p-value signal): {len(labeled)}/{n_nct}.")
+    L.append(f"- Auto-outcome matches hand: **{agree}/{len(labeled)}**.")
+    if divergent:
+        L.append("")
+        L.append("Divergent (trial outcome != hand/regulatory outcome, a real distinction):")
+        for drug, nct, auto, hand in divergent:
+            L.append(f"- {drug} [{nct}]: trial={auto}, hand={hand}")
+    L.append("")
+    L.append("| Drug | NCT | primary p | auto | hand | status |")
+    L.append("|---|---|---:|---|---|---|")
+    for o in out:
+        L.append(f"| {o['drug']} | {o['nct_id']} | {o['primary_pvalue']} | {o['auto_outcome']} | {o['hand_outcome']} | {o['status']} |")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "ctgov-outcome-labeling.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+    return {"n_nct": n_nct, "labeled": len(labeled), "agree": agree}
+
+
 def main(argv: list[str]) -> int:
     if "--self-test" in argv:
         return _self_test()
+    if "--corpus" in argv:
+        label_corpus()
+        return 0
     print("Live CT.gov outcome derivation (demo):\n")
     for label, nct in DEMO:
         r = label_nct(nct)
