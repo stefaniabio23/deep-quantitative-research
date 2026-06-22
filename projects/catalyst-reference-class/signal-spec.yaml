@@ -1,0 +1,46 @@
+signal_id: catalyst-reference-class
+signal_name: "Reference-Class Forecasting for Biotech Catalysts"
+
+# Pre-registered method. The unit is a catalyst (drug x indication x event).
+# The claim is methodological: the outcome of a biotech binary event is
+# better forecast from its mechanistic/clinical reference class (the outside
+# view) than from its own narrative, and the class base rate carries
+# measurable signal.
+
+hypothesis:
+  statement: >
+    Historical analogues sharing a catalyst's mechanism of action, target,
+    disease, and situational pattern carry a base rate that predicts its
+    outcome. Tested by leave-one-out: predicting each event's outcome from
+    its analogues (itself excluded) should separate actual successes from
+    actual failures.
+  target_variable: catalyst outcome (success / mixed / failure)
+  validation_metric: leave-one-out separation, accuracy, Brier score
+
+corpus:
+  file: catalysts.csv
+  unit: one catalyst per row
+  fields: [drug, company, ticker, disease_area, indication, moa, target, modality, phase, outcome, tags, catalyst_date]
+  outcome_values: [success, mixed, failure]
+  v1_source: curated from domain knowledge (audit before real use)
+  v2_source: AACT (disease/situation/outcome-signal) + Open Targets/ChEMBL (MOA/target) + FDA (regulatory outcome), keyed on normalized drug name
+
+retrieval:
+  core_match_required: true   # mechanism (MOA/target) or indication; tags alone never qualify
+  weights: {moa: 4, target: 3, disease_area: 2, indication: 2, modality: 1, phase: 1, tag: 1}
+
+confidence_caps:
+  insufficient: "n < 3"
+  low: "n < 5"
+  medium: "n < 8"
+  high: "n >= 8"
+
+outputs:
+  class_base_rates: expected-output/class-base-rates.csv
+  calibration: expected-output/loo-calibration.csv
+  summary: expected-output/reference-class-summary.md
+
+next:
+  - v2: auto-enrich the corpus from AACT + Open Targets + FDA
+  - v3: price-reaction overlay (needs survivorship-clean prices; see biotech-sell-the-news)
+  - separate clinical (endpoint met) from regulatory (approved) outcomes
