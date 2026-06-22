@@ -128,6 +128,8 @@ jobs:
         run: python projects/catalyst-reference-class/run_reference_class.py --self-test
       - name: Open Targets enrichment parser self-test
         run: python projects/catalyst-reference-class/enrich_opentargets.py --self-test
+      - name: CT.gov outcome-labeling parser self-test
+        run: python projects/catalyst-reference-class/outcome_ctgov.py --self-test
       - name: Sell-the-news event-study self-test
         run: python projects/biotech-sell-the-news/run_sell_the_news.py --self-test
       - name: ALFRED revision-momentum self-test
