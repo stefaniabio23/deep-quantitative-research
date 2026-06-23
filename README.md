@@ -2,7 +2,7 @@
 
 A registry-aware quantitative research engine. Turns a vague research idea into a falsifiable, reproducible, dashboard-ready signal artifact.
 
-The unit of work is a **signal**, not a model. A signal carries its hypothesis, datasets, contracts, features, backtest, validation, causal read, confidence, caveats, and next iteration in one folder.
+The unit of work is a **signal**, not a model. A signal carries its hypothesis, alidation, causal read, confidence, caveats, and next iteration in one folder.
 
 ```text
 Idea → Hypothesis → Dataset Selection → Dataset Contract → Cadence Alignment
@@ -11,15 +11,15 @@ Idea → Hypothesis → Dataset Selection → Dataset Contract → Cadence Align
 
 ## What it does
 
-Give it a research question. The pipeline formulates a testable hypothesis, queries the sibling `datasources` registry, scores candidate datasets by hypothesis fit, materialises an experiment-specific dataset contract, aligns cadences safely, generates a controlled feature grid, runs walk-forward backtests in either KPI-prediction or tradable-signal mode, validates against leakage and overfitting, and emits a signal card plus a dashboard.
+Give it a research question. The pipeline formulates a testable hypothesis, queries the sibling `datasources` registry, scores candidate datasets by hypothesis fit, materialises an experiment-specific dataset contract, generates a controlled feature grid, validates against leakage and overfitting, and emits a signal card plus a dashboard.
 
 If the evidence is weak it caps confidence and returns a documented null. A null result with the right caveats is a finding.
 
 **Domains:**
 
-- **Finance.** KPI-to-price analysis, factor decomposition, backtesting, lag analysis, event studies.
 - **Biotech.** Clinical trial signal extraction, drug pipeline analysis, openFDA / OpenTargets feeds.
-- **Macro / quant.** Factor models, macro relationships, dependence structures, regime analysis.
+- **Finance.** KPI-to-price analysis, factor decomposition, backtesting, lag analysis, event studies.
+- **Macro.** Factor models, dependence structures, regime analysis.
 
 ## Architecture
 
@@ -85,7 +85,7 @@ deep-quant render-family-dashboard \
   --out experiments/outputs/family.html
 ```
 
-`run-signal` is the end-to-end command. It loads the SignalSpec, rolls cadences, builds the feature grid, runs the KPI backtest, applies the validation gate, and writes every artefact (including `dashboard.html` when `outputs.dashboard: true`) into the run directory.
+`run-signal` is the end-to-end command. It loads the SignalSpec, rolls cadences, builds the feature grid, applies the validation gate, and writes every artefact (including `dashboard.html` when `outputs.dashboard: true`) into the run directory.
 
 Per-stage subcommands (`formulate-hypothesis`, `find-datasets`, `design-signal`, `validate-signal`, `render-signal-card`) are planned; see `BUILD_CHECKLIST.md`. Until they ship, drive each stage through the sub-skill specs under `skills/deep-quantitative-research/skills/`.
 
