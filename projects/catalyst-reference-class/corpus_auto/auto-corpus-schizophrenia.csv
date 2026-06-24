@@ -1,0 +1,17 @@
+event_id,drug,disease_area,indication,moa,target,modality,phase,outcome,nct_id,moa_resolved,source
+karxt-NCT06572449,KarXT,cns,schizophrenia,Muscarinic acetylcholine receptor M1 agonist,CHRM1,small_molecule,ph3,unlabeled,NCT06572449,True,ctgov-auto
+razadyne-NCT00566735,Razadyne,cns,schizophrenia,Acetylcholinesterase inhibitor,ACHE,small_molecule,ph3,unlabeled,NCT00566735,True,ctgov-auto
+pp3m-NCT01515423,PP3M,cns,schizophrenia,,,,ph3,unlabeled,NCT01515423,False,ctgov-auto
+cariprazine-NCT01104779,Cariprazine,cns,schizophrenia,Dopamine D2 receptor modulator,DRD2,small_molecule,ph3,success,NCT01104779,True,ctgov-auto
+rbp-7000-NCT02109562,RBP-7000,cns,schizophrenia,,,,ph3,success,NCT02109562,False,ctgov-auto
+xanomeline-and-trospium-chloride-capsules-NCT04659161,Xanomeline and Trospium Chloride Capsules,cns,schizophrenia,,,,ph3,success,NCT04659161,False,ctgov-auto
+sm-13496-40mg-NCT01614899,SM-13496 40mg,cns,schizophrenia,,,,ph3,failure,NCT01614899,False,ctgov-auto
+paliperidone-er-NCT00397033,Paliperidone ER,cns,schizophrenia,Dopamine D2 receptor antagonist,DRD2,small_molecule,ph3,unlabeled,NCT00397033,True,ctgov-auto
+lurasidone-hcl-NCT00641745,Lurasidone HCl,cns,schizophrenia,Dopamine D2 receptor antagonist,DRD2,small_molecule,ph3,unlabeled,NCT00641745,True,ctgov-auto
+brexpiprazole-NCT03198078,Brexpiprazole,cns,schizophrenia,Serotonin 2a (5-HT2a) receptor antagonist,HTR2A,small_molecule,ph3,success,NCT03198078,True,ctgov-auto
+opc-34712-NCT01397786,OPC-34712,cns,schizophrenia,Serotonin 2a (5-HT2a) receptor antagonist,HTR2A,small_molecule,ph3,unlabeled,NCT01397786,True,ctgov-auto
+paliperidone-NCT00473434,Paliperidone,cns,schizophrenia,Serotonin 2a (5-HT2a) receptor antagonist,HTR2A,small_molecule,ph3,unlabeled,NCT00473434,True,ctgov-auto
+pimavanserin-tartrate-NCT00477672,Pimavanserin tartrate,cns,schizophrenia,Serotonin 2a (5-HT2a) receptor inverse agonist,HTR2A,small_molecule,ph3,unlabeled,NCT00477672,True,ctgov-auto
+divalproex-extended-release-NCT00183443,Divalproex-extended release,cns,schizophrenia,,,,ph3,unlabeled,NCT00183443,False,ctgov-auto
+sublingual-film-containing-dexmedetomidine-NCT04268303,Sublingual film containing dexmedetomidine,cns,schizophrenia,,,,ph3,success,NCT04268303,False,ctgov-auto
+mp-214-NCT01625897,MP-214,cns,schizophrenia,Dopamine D2 receptor modulator,DRD2,small_molecule,ph3,unlabeled,NCT01625897,True,ctgov-auto
